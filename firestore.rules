@@ -1,0 +1,10 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // Leaderboard collection is publicly readable and allows creating practice records
+    match /leaderboard/{entryId} {
+      allow read: if true;
+      allow write: if true;
+    }
+  }
+}

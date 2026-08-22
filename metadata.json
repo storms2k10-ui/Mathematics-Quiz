@@ -1,0 +1,8 @@
+{
+  "name": "Remix Remix Remix MATHEMATICS MCQ\u0027s By Mahtab Ahmed",
+  "description": "Mathematics MCQ practice platform for Classes 9, 10, 11, and 12 curated by Mahtab Ahmed (BS Mathematics \u0026 Mastering Calculus \u0026 Algebra, TU Delft University, Netherlands) featuring 50 questions per chapter with instant feedback and step-by-step KaTeX mathematical explanations.",
+  "requestFramePermissions": [],
+  "majorCapabilities": [
+    "MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"
+  ]
+}

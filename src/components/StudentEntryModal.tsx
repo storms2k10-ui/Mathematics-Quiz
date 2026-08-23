@@ -198,37 +198,18 @@ export const StudentEntryModal: React.FC<StudentEntryModalProps> = ({
             </div>
           </div>
 
-          {/* Track Selector: Elementary Mathematics vs Advanced Mathematics */}
-          <div className="space-y-1">
+          {/* Track Display: Rectangular Shape in Middle */}
+          <div className="space-y-1 text-center">
             <label className="block text-xs font-bold uppercase tracking-wider text-slate-700 dark:text-slate-300">
-              Select Mathematics Track
+              Mathematics Track
             </label>
-            <div className="grid grid-cols-2 gap-2">
-              <button
-                type="button"
-                onClick={() => setSelectedTrack('Elementary Mathematics')}
-                className={`p-2.5 rounded-xl text-xs font-bold border transition-all text-left cursor-pointer ${
-                  selectedTrack === 'Elementary Mathematics'
-                    ? 'bg-indigo-50 dark:bg-indigo-950/60 border-indigo-500 text-indigo-700 dark:text-indigo-300 ring-2 ring-indigo-500/20'
-                    : 'bg-slate-50 dark:bg-slate-800 border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300'
-                }`}
-              >
-                <span className="block font-bold">Elementary Mathematics</span>
-                <span className="block text-[10px] font-normal text-slate-500 mt-0.5">Core concepts &amp; formulas</span>
-              </button>
-
-              <button
-                type="button"
-                onClick={() => setSelectedTrack('Advanced Mathematics')}
-                className={`p-2.5 rounded-xl text-xs font-bold border transition-all text-left cursor-pointer ${
-                  selectedTrack === 'Advanced Mathematics'
-                    ? 'bg-purple-50 dark:bg-purple-950/60 border-purple-500 text-purple-700 dark:text-purple-300 ring-2 ring-purple-500/20'
-                    : 'bg-slate-50 dark:bg-slate-800 border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300'
-                }`}
-              >
-                <span className="block font-bold">Advanced Mathematics</span>
-                <span className="block text-[10px] font-normal text-slate-500 mt-0.5">Competitive &amp; proofs</span>
-              </button>
+            <div className="p-3 rounded-2xl bg-indigo-50/90 dark:bg-indigo-950/70 border-2 border-indigo-500/80 text-center shadow-xs">
+              <span className="block font-black text-sm text-indigo-700 dark:text-indigo-300">
+                Elementary Mathematics
+              </span>
+              <span className="block text-[11px] font-medium text-indigo-600/80 dark:text-indigo-400/80 mt-0.5">
+                Standard School Curriculum &amp; Conceptual Foundation
+              </span>
             </div>
           </div>
 

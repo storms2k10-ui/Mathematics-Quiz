@@ -492,8 +492,10 @@ export default function App() {
         }}
       />
 
-      {/* Footer - Hidden in Quiz and Results/Score Views */}
-      {!['quiz', 'results'].includes(currentView) && <Footer onNavigate={handleNavigate} />}
+      {/* Footer - Hidden in Quiz, Results/Score, and Class Page Views */}
+      {!['quiz', 'results', 'class-page'].includes(currentView) && activeTab !== 'classes' && (
+        <Footer onNavigate={handleNavigate} />
+      )}
 
     </div>
   );

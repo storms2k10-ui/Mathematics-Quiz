@@ -1,10 +1,8 @@
-import React, { useState, useMemo } from 'react';
+import React from 'react';
 import { 
-  BookOpen, 
   ArrowLeft, 
   Play, 
-  Eye,
-  Sigma
+  Eye
 } from 'lucide-react';
 import { Chapter, ClassInfo, ClassLevel } from '../types';
 import { ChapterArtwork } from './ChapterArtwork';
@@ -23,36 +21,18 @@ interface ClassPageViewProps {
 
 export const ClassPageView: React.FC<ClassPageViewProps> = ({
   currentClass,
-  classInfo,
   chapters,
   onSelectChapter,
   onOpenChapterDetails,
-  onClassChange,
   onBackToHome,
 }) => {
-  const [categoryFilter, setCategoryFilter] = useState<string>('all');
-
-  // Extract unique categories for filter pills
-  const availableCategories = useMemo(() => {
-    const set = new Set<string>();
-    chapters.forEach((c) => {
-      if (c.category) set.add(c.category);
-    });
-    return Array.from(set);
-  }, [chapters]);
-
-  const filteredChapters = useMemo(() => {
-    return chapters.filter((ch) => {
-      return categoryFilter === 'all' || ch.category === categoryFilter;
-    });
-  }, [chapters, categoryFilter]);
 
   return (
     <div id="class-page-view" className="py-6 sm:py-8 bg-slate-50 dark:bg-slate-950 min-h-[calc(100vh-100px)] animate-fade-in">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-6">
         
-        {/* Navigation Breadcrumb & Class Selector Tabs */}
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+        {/* Navigation Breadcrumb */}
+        <div className="flex items-center justify-between">
           <button
             onClick={onBackToHome}
             className="inline-flex items-center gap-2 text-xs font-semibold text-slate-600 dark:text-slate-400 hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors w-fit cursor-pointer"
@@ -60,72 +40,20 @@ export const ClassPageView: React.FC<ClassPageViewProps> = ({
             <ArrowLeft className="w-4 h-4" />
             <span>Back to Home</span>
           </button>
-
-          {/* Quick Class Switcher Pill Tabs */}
-          <div className="flex flex-wrap items-center gap-1.5 p-1 bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-xs">
-            {([9, 10, 11, 12] as ClassLevel[]).map((lvl) => (
-              <button
-                key={lvl}
-                onClick={() => {
-                  onClassChange(lvl);
-                  setCategoryFilter('all');
-                }}
-                className={`px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer ${
-                  currentClass === lvl
-                    ? 'bg-indigo-600 text-white shadow-xs scale-[1.02]'
-                    : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
-                }`}
-              >
-                Class {lvl} Mathematics
-              </button>
-            ))}
-          </div>
-        </div>
-
-        {/* Section Header: Practice Elementary Mathematics */}
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pt-2">
+          
           <div className="flex items-center gap-2">
-            <h2 className="text-lg sm:text-xl font-black text-slate-900 dark:text-white tracking-tight">
-              Class {currentClass} Chapters
-            </h2>
+            <span className="text-xs font-black text-slate-900 dark:text-white">
+              Class {currentClass} Mathematics
+            </span>
             <span className="px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-indigo-50 dark:bg-indigo-950/60 text-indigo-600 dark:text-indigo-400 border border-indigo-200 dark:border-indigo-800">
-              {filteredChapters.length} Chapters
+              {chapters.length} Chapters
             </span>
           </div>
-
-          {/* Category Filter Chips */}
-          {availableCategories.length > 1 && (
-            <div className="flex items-center gap-2 overflow-x-auto pb-1 text-xs">
-              <button
-                onClick={() => setCategoryFilter('all')}
-                className={`px-3 py-1 rounded-full text-xs font-bold shrink-0 transition-all border cursor-pointer ${
-                  categoryFilter === 'all'
-                    ? 'bg-slate-900 text-white dark:bg-white dark:text-slate-900 border-transparent shadow-xs'
-                    : 'bg-white dark:bg-slate-900 text-slate-600 dark:text-slate-400 border-slate-200 dark:border-slate-800 hover:border-indigo-400'
-                }`}
-              >
-                All Topics ({chapters.length})
-              </button>
-              {availableCategories.map((cat) => (
-                <button
-                  key={cat}
-                  onClick={() => setCategoryFilter(cat)}
-                  className={`px-3 py-1 rounded-full text-xs font-bold shrink-0 transition-all border cursor-pointer ${
-                    categoryFilter === cat
-                      ? 'bg-indigo-600 text-white border-indigo-600 shadow-xs'
-                      : 'bg-white dark:bg-slate-900 text-slate-600 dark:text-slate-400 border-slate-200 dark:border-slate-800 hover:border-indigo-400'
-                  }`}
-                >
-                  {cat}
-                </button>
-              ))}
-            </div>
-          )}
         </div>
 
         {/* Chapters Cards Grid */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {filteredChapters.map((chapter, idx) => (
+          {chapters.map((chapter, idx) => (
             <div
               key={chapter.id}
               className="group bg-white dark:bg-slate-900 rounded-3xl border border-slate-200 dark:border-slate-800 hover:border-indigo-500/60 dark:hover:border-indigo-500/60 shadow-xs hover:shadow-xl transition-all duration-300 flex flex-col overflow-hidden"

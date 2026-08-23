@@ -94,7 +94,6 @@ const FIELD_THEMES: Record<string, {
 export const MathPhilosophySection: React.FC<MathPhilosophySectionProps> = ({ initialTab = 'mathematicians' }) => {
   const [selectedMathematician, setSelectedMathematician] = useState<Mathematician | null>(null);
   const [activeMainSection, setActiveMainSection] = useState<'mathematicians' | 'physicists'>(initialTab);
-  const [searchQuery, setSearchQuery] = useState('');
   const [activeCategory, setActiveCategory] = useState<string>('all');
 
   // Keep synced with navbar dropdown
@@ -136,19 +135,11 @@ export const MathPhilosophySection: React.FC<MathPhilosophySectionProps> = ({ in
         return false;
       }
 
-      // 2. Search query filter
-      const matchesSearch = 
-        m.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        m.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        m.philosophicalView.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        m.famousQuote.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        m.majorBreakthroughs.some(b => b.title.toLowerCase().includes(searchQuery.toLowerCase()) || (b.formula && b.formula.toLowerCase().includes(searchQuery.toLowerCase())));
-
-      // 3. Subcategory filter
+      // 2. Subcategory filter
       const matchesCat = activeCategory === 'all' || m.field === activeCategory;
-      return matchesSearch && matchesCat;
+      return matchesCat;
     });
-  }, [activeMainSection, searchQuery, activeCategory]);
+  }, [activeMainSection, activeCategory]);
 
   return (
     <section id="math-philosophy-section" className="py-12 md:py-20 bg-gradient-to-b from-slate-950 via-slate-900 to-slate-950 text-white relative overflow-hidden border-t border-b border-indigo-900/50 shadow-2xl">
@@ -221,31 +212,9 @@ export const MathPhilosophySection: React.FC<MathPhilosophySectionProps> = ({ in
           </div>
         </div>
 
-        {/* Search & Category Filter Controls */}
-        <div className="flex flex-col md:flex-row items-center justify-between gap-4 bg-slate-900/80 p-4 rounded-3xl border border-slate-800 shadow-xl backdrop-blur-md">
-          
-          {/* Search bar */}
-          <div className="relative w-full md:w-80">
-            <Search className="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
-            <input
-              type="text"
-              placeholder={activeMainSection === 'physicists' ? "Search physicist, quote, formula..." : "Search mathematician, theorem, formula..."}
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full pl-9 pr-4 py-2.5 bg-slate-950/90 border border-slate-700/80 rounded-2xl text-xs sm:text-sm text-white placeholder-slate-400 focus:outline-hidden focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20 transition-all"
-            />
-            {searchQuery && (
-              <button
-                onClick={() => setSearchQuery('')}
-                className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-white transition-colors cursor-pointer"
-              >
-                <X className="w-4 h-4" />
-              </button>
-            )}
-          </div>
-
-          {/* Category Filter Pills */}
-          <div className="flex flex-wrap items-center gap-1.5 overflow-x-auto w-full md:w-auto pb-1 md:pb-0">
+        {/* Category Filter Pills (Centered, No Search Bar) */}
+        <div className="flex justify-center bg-slate-900/80 p-3 sm:p-4 rounded-3xl border border-slate-800 shadow-xl backdrop-blur-md">
+          <div className="flex flex-wrap items-center justify-center gap-1.5 sm:gap-2">
             {categories.map((cat) => (
               <button
                 key={cat.id}
@@ -262,7 +231,6 @@ export const MathPhilosophySection: React.FC<MathPhilosophySectionProps> = ({ in
               </button>
             ))}
           </div>
-
         </div>
 
         {/* Thinkers Cards Grid */}

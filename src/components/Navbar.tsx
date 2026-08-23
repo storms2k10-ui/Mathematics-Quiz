@@ -19,7 +19,8 @@ import {
   User,
   LogIn,
   GraduationCap,
-  Sparkles
+  Sparkles,
+  Zap
 } from 'lucide-react';
 import { ClassLevel } from '../types';
 import { useTheme } from '../context/ThemeContext';
@@ -119,18 +120,35 @@ export const Navbar: React.FC<NavbarProps> = ({
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex items-center justify-between h-16 sm:h-18">
           
-          {/* Brand Logo */}
-          <button
-            id="nav-logo-btn"
-            onClick={() => onNavigate('home')}
-            className="flex items-center group focus:outline-none cursor-pointer shrink-0"
-            title="MATHEMATICS & PHYSICS"
-            aria-label="Home - Mathematics & Physics"
-          >
-            <div className="w-10 h-10 rounded-2xl bg-gradient-to-br from-indigo-600 via-indigo-700 to-indigo-800 text-white flex items-center justify-center shadow-md shadow-indigo-600/30 group-hover:scale-105 group-hover:shadow-indigo-600/40 transition-all border border-indigo-400/30">
-              <Sigma className="w-5 h-5 stroke-[2.5]" />
-            </div>
-          </button>
+          {/* Left Side: Profile Icon Button & Brand Logo */}
+          <div className="flex items-center gap-2.5 sm:gap-3 shrink-0">
+            {/* Profile Icon Button on Header Left Side */}
+            <button
+              id="header-profile-btn"
+              onClick={currentUser || userProfile ? onOpenProfile : onOpenAuth}
+              className="flex items-center gap-1.5 px-3 py-1.5 sm:py-2 rounded-2xl bg-indigo-50 dark:bg-indigo-950/60 border border-indigo-200 dark:border-indigo-800 text-indigo-700 dark:text-indigo-300 hover:bg-indigo-100 dark:hover:bg-indigo-900/50 text-xs font-bold transition-all cursor-pointer shadow-xs"
+              title={currentUser || userProfile ? "Student Profile & Stats" : "Sign In / Create Account"}
+              aria-label="Student Profile"
+            >
+              <User className="w-4 h-4 text-indigo-600 dark:text-indigo-400" />
+              <span className="max-w-[90px] truncate hidden sm:inline">
+                {userProfile?.displayName || currentUser?.email?.split('@')[0] || 'Profile'}
+              </span>
+            </button>
+
+            {/* Brand Logo */}
+            <button
+              id="nav-logo-btn"
+              onClick={() => onNavigate('home')}
+              className="flex items-center group focus:outline-none cursor-pointer shrink-0"
+              title="MATHEMATICS & PHYSICS"
+              aria-label="Home - Mathematics & Physics"
+            >
+              <div className="w-10 h-10 rounded-2xl bg-gradient-to-br from-indigo-600 via-indigo-700 to-indigo-800 text-white flex items-center justify-center shadow-md shadow-indigo-600/30 group-hover:scale-105 group-hover:shadow-indigo-600/40 transition-all border border-indigo-400/30">
+                <Sigma className="w-5 h-5 stroke-[2.5]" />
+              </div>
+            </button>
+          </div>
 
           {/* Desktop Navigation Links */}
           <div className="hidden md:flex items-center gap-1.5 lg:gap-2">

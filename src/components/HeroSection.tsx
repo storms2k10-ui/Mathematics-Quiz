@@ -1,5 +1,5 @@
 import React from 'react';
-import { ArrowRight, CheckCircle, Calculator, GraduationCap, Quote } from 'lucide-react';
+import { ArrowRight, CheckCircle, Calculator, GraduationCap } from 'lucide-react';
 import { ClassLevel } from '../types';
 import { MathText } from './MathText';
 
@@ -13,18 +13,18 @@ export const HeroSection: React.FC<HeroSectionProps> = ({
   onStartPracticing,
 }) => {
   return (
-    <div className="space-y-10">
+    <div className="space-y-6">
       
       {/* Top Hero Banner */}
-      <section id="hero-section" className="relative overflow-hidden bg-gradient-to-b from-slate-50 via-white to-slate-50 dark:from-slate-950 dark:via-slate-900 dark:to-slate-950 py-10 md:py-16 border-b border-slate-200/80 dark:border-slate-800">
+      <section id="hero-section" className="relative overflow-hidden bg-gradient-to-b from-slate-50 via-white to-slate-50 dark:from-slate-950 dark:via-slate-900 dark:to-slate-950 py-8 md:py-12 border-b border-slate-200/80 dark:border-slate-800">
         {/* Subtle math watermark grid */}
         <div className="absolute inset-0 bg-[linear-gradient(to_right,#8080800a_1px,transparent_1px),linear-gradient(to_bottom,#8080800a_1px,transparent_1px)] bg-[size:24px_24px] pointer-events-none" />
 
         <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="grid grid-cols-1 lg:grid-cols-12 gap-10 lg:gap-12 items-center">
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-10 items-center">
             
             {/* Left Column: Heading & CTAs */}
-            <div className="lg:col-span-7 space-y-6 text-center lg:text-left">
+            <div className="lg:col-span-7 space-y-5 text-center lg:text-left">
               
               <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-indigo-50 dark:bg-indigo-950/60 border border-indigo-200/70 dark:border-indigo-800 text-indigo-700 dark:text-indigo-300 text-xs font-bold tracking-wide shadow-xs">
                 <GraduationCap className="w-4 h-4 text-indigo-600 dark:text-indigo-400" />
@@ -38,33 +38,6 @@ export const HeroSection: React.FC<HeroSectionProps> = ({
                 <p className="text-sm sm:text-base font-bold text-indigo-600 dark:text-indigo-400">
                   Comprehensive Concept Practice &amp; Step-by-Step Solutions
                 </p>
-              </div>
-
-              <p className="text-sm sm:text-base lg:text-lg text-slate-600 dark:text-slate-300 max-w-2xl mx-auto lg:mx-0 leading-relaxed font-sans">
-                Master Mathematics for Class 9 to 12 with precisely formulated MCQs. Each unit features instant evaluation and rigorous mathematical notation.
-              </p>
-
-              {/* Carl Friedrich Gauss Quote on Front Page */}
-              <div className="p-4 rounded-2xl bg-gradient-to-r from-amber-50 via-indigo-50/50 to-slate-50 dark:from-amber-950/40 dark:via-slate-900/60 dark:to-indigo-950/40 border border-amber-300/60 dark:border-amber-500/30 text-left shadow-xs">
-                <div className="flex items-start gap-3">
-                  <span className="p-1.5 rounded-xl bg-amber-600 text-white shadow-xs shrink-0 mt-0.5">
-                    <Quote className="w-3.5 h-3.5 fill-white" />
-                  </span>
-                  <div className="space-y-1">
-                    <p className="text-xs sm:text-sm font-serif italic text-slate-800 dark:text-amber-100 leading-relaxed">
-                      &ldquo;Mathematics is the queen of the sciences and number theory is the queen of mathematics.&rdquo;
-                    </p>
-                    <div className="flex items-center gap-1.5 text-[11px]">
-                      <span className="font-bold text-amber-800 dark:text-amber-300 uppercase tracking-wide">
-                        Carl Friedrich Gauss
-                      </span>
-                      <span className="text-slate-400">•</span>
-                      <span className="text-slate-500 dark:text-slate-400">
-                        Princeps Mathematicorum (1777–1855)
-                      </span>
-                    </div>
-                  </div>
-                </div>
               </div>
 
               {/* Quick Action Buttons */}

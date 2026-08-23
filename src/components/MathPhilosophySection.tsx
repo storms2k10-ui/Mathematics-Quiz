@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { 
   Quote, 
   Sparkles, 
@@ -13,13 +13,17 @@ import {
   ExternalLink,
   Flame,
   Atom,
-  Brain
+  Brain,
+  Layers,
+  Sigma,
+  Zap
 } from 'lucide-react';
 import { MATHEMATICIANS, Mathematician } from '../data/mathematiciansData';
 import { MathText } from './MathText';
 
 interface MathPhilosophySectionProps {
   onExploreMathematician?: (mathematician: Mathematician) => void;
+  initialTab?: 'physicists' | 'mathematicians';
 }
 
 const FIELD_THEMES: Record<string, {
@@ -87,46 +91,74 @@ const FIELD_THEMES: Record<string, {
   },
 };
 
-export const MathPhilosophySection: React.FC<MathPhilosophySectionProps> = () => {
+export const MathPhilosophySection: React.FC<MathPhilosophySectionProps> = ({ initialTab = 'mathematicians' }) => {
   const [selectedMathematician, setSelectedMathematician] = useState<Mathematician | null>(null);
+  const [activeMainSection, setActiveMainSection] = useState<'mathematicians' | 'physicists'>(initialTab);
   const [searchQuery, setSearchQuery] = useState('');
   const [activeCategory, setActiveCategory] = useState<string>('all');
 
+  // Keep synced with navbar dropdown
+  useEffect(() => {
+    if (initialTab) {
+      setActiveMainSection(initialTab);
+      setActiveCategory('all');
+    }
+  }, [initialTab]);
+
+  const counts = useMemo(() => {
+    const mathCount = MATHEMATICIANS.filter(m => m.thinkerType === 'mathematician').length;
+    const physCount = MATHEMATICIANS.filter(m => m.thinkerType === 'physicist').length;
+    return { mathCount, physCount };
+  }, []);
+
   const categories = useMemo(() => {
+    if (activeMainSection === 'physicists') {
+      return [
+        { id: 'all', label: 'All Physicists' },
+        { id: 'Theoretical Physics', label: 'Theoretical Physics & Relativity' },
+        { id: 'Ancient Pioneers', label: 'Observational & Classical' },
+      ];
+    }
     return [
-      { id: 'all', label: 'All Thinkers' },
-      { id: 'Theoretical Physics', label: 'Theoretical Physics' },
+      { id: 'all', label: 'All Mathematicians' },
       { id: 'Calculus & Analysis', label: 'Calculus & Analysis' },
       { id: 'Algebra & Number Theory', label: 'Algebra & Number Theory' },
       { id: 'Geometry & Topology', label: 'Geometry & Topology' },
-      { id: 'Pure Mathematics', label: 'Pure Mathematics' },
+      { id: 'Pure Mathematics', label: 'Pure Mathematics & Logic' },
       { id: 'Ancient Pioneers', label: 'Ancient Pioneers' },
     ];
-  }, []);
+  }, [activeMainSection]);
 
   const filteredThinkers = useMemo(() => {
     return MATHEMATICIANS.filter((m) => {
+      // 1. Strict primary section filter
+      if (m.thinkerType !== (activeMainSection === 'physicists' ? 'physicist' : 'mathematician')) {
+        return false;
+      }
+
+      // 2. Search query filter
       const matchesSearch = 
         m.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
         m.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
         m.philosophicalView.toLowerCase().includes(searchQuery.toLowerCase()) ||
         m.famousQuote.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        m.majorBreakthroughs.some(b => b.title.toLowerCase().includes(searchQuery.toLowerCase()));
+        m.majorBreakthroughs.some(b => b.title.toLowerCase().includes(searchQuery.toLowerCase()) || (b.formula && b.formula.toLowerCase().includes(searchQuery.toLowerCase())));
 
+      // 3. Subcategory filter
       const matchesCat = activeCategory === 'all' || m.field === activeCategory;
       return matchesSearch && matchesCat;
     });
-  }, [searchQuery, activeCategory]);
+  }, [activeMainSection, searchQuery, activeCategory]);
 
   return (
-    <section id="math-philosophy-section" className="py-16 md:py-24 bg-gradient-to-b from-slate-950 via-slate-900 to-slate-950 text-white relative overflow-hidden border-t border-b border-indigo-900/50 shadow-2xl">
+    <section id="math-philosophy-section" className="py-12 md:py-20 bg-gradient-to-b from-slate-950 via-slate-900 to-slate-950 text-white relative overflow-hidden border-t border-b border-indigo-900/50 shadow-2xl">
       
       {/* Background Sacred Geometry & Deep Space Cosmic Glow */}
       <div className="absolute inset-0 bg-[radial-gradient(#6366f120_1px,transparent_1px)] [background-size:32px_32px] pointer-events-none opacity-40" />
       <div className="absolute -top-48 left-1/4 w-[500px] h-[500px] bg-indigo-600/15 rounded-full blur-[120px] pointer-events-none" />
       <div className="absolute -bottom-48 right-1/4 w-[500px] h-[500px] bg-purple-600/15 rounded-full blur-[120px] pointer-events-none" />
 
-      <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-12">
+      <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-10">
         
         {/* Section Header */}
         <div className="text-center max-w-3xl mx-auto space-y-4">
@@ -136,12 +168,57 @@ export const MathPhilosophySection: React.FC<MathPhilosophySectionProps> = () =>
           </div>
 
           <h2 className="text-3xl sm:text-4xl lg:text-5xl font-black tracking-tight text-white leading-tight">
-            The Great Minds &amp; Mathematical Philosophers
+            The Great Thinkers &amp; Pioneers
           </h2>
 
           <p className="text-sm sm:text-base text-slate-300 leading-relaxed font-sans max-w-2xl mx-auto">
-            Explore the foundational inquiries, epistemological breakthroughs, and universal equations of the thinkers who decoded the mathematical language of reality.
+            Discover the profound philosophical worldviews, mathematical formulations, and enduring breakthroughs of humanity&apos;s greatest minds.
           </p>
+        </div>
+
+        {/* 🌟 PROMINENT TWO-SECTION SWITCHER: PHYSICISTS vs MATHEMATICIANS */}
+        <div className="flex justify-center">
+          <div className="p-1.5 bg-slate-900/90 border border-slate-800 rounded-2xl flex items-center gap-2 shadow-2xl backdrop-blur-md max-w-md w-full">
+            <button
+              onClick={() => {
+                setActiveMainSection('physicists');
+                setActiveCategory('all');
+              }}
+              className={`flex-1 py-3 px-4 rounded-xl font-black text-sm flex items-center justify-center gap-2 transition-all cursor-pointer ${
+                activeMainSection === 'physicists'
+                  ? 'bg-gradient-to-r from-cyan-600 to-blue-600 text-white shadow-lg shadow-cyan-600/30 scale-[1.02]'
+                  : 'text-slate-400 hover:text-white hover:bg-slate-800/60'
+              }`}
+            >
+              <Atom className={`w-4 h-4 ${activeMainSection === 'physicists' ? 'text-cyan-200 animate-spin-slow' : 'text-slate-400'}`} />
+              <span>Physicists</span>
+              <span className={`px-2 py-0.5 rounded-md text-xs font-bold ${
+                activeMainSection === 'physicists' ? 'bg-cyan-900/60 text-cyan-200' : 'bg-slate-800 text-slate-400'
+              }`}>
+                {counts.physCount}
+              </span>
+            </button>
+
+            <button
+              onClick={() => {
+                setActiveMainSection('mathematicians');
+                setActiveCategory('all');
+              }}
+              className={`flex-1 py-3 px-4 rounded-xl font-black text-sm flex items-center justify-center gap-2 transition-all cursor-pointer ${
+                activeMainSection === 'mathematicians'
+                  ? 'bg-gradient-to-r from-indigo-600 to-purple-600 text-white shadow-lg shadow-indigo-600/30 scale-[1.02]'
+                  : 'text-slate-400 hover:text-white hover:bg-slate-800/60'
+              }`}
+            >
+              <Sigma className="w-4 h-4" />
+              <span>Mathematicians</span>
+              <span className={`px-2 py-0.5 rounded-md text-xs font-bold ${
+                activeMainSection === 'mathematicians' ? 'bg-indigo-900/60 text-indigo-200' : 'bg-slate-800 text-slate-400'
+              }`}>
+                {counts.mathCount}
+              </span>
+            </button>
+          </div>
         </div>
 
         {/* Search & Category Filter Controls */}
@@ -152,7 +229,7 @@ export const MathPhilosophySection: React.FC<MathPhilosophySectionProps> = () =>
             <Search className="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
             <input
               type="text"
-              placeholder="Search mathematician, quote, theorem..."
+              placeholder={activeMainSection === 'physicists' ? "Search physicist, quote, formula..." : "Search mathematician, theorem, formula..."}
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               className="w-full pl-9 pr-4 py-2.5 bg-slate-950/90 border border-slate-700/80 rounded-2xl text-xs sm:text-sm text-white placeholder-slate-400 focus:outline-hidden focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20 transition-all"
@@ -175,7 +252,9 @@ export const MathPhilosophySection: React.FC<MathPhilosophySectionProps> = () =>
                 onClick={() => setActiveCategory(cat.id)}
                 className={`px-3.5 py-2 rounded-xl text-xs font-bold transition-all whitespace-nowrap cursor-pointer ${
                   activeCategory === cat.id
-                    ? 'bg-gradient-to-r from-indigo-600 to-purple-600 text-white shadow-md shadow-indigo-600/30 scale-105'
+                    ? activeMainSection === 'physicists'
+                      ? 'bg-gradient-to-r from-cyan-600 to-blue-600 text-white shadow-md shadow-cyan-600/30 scale-105'
+                      : 'bg-gradient-to-r from-indigo-600 to-purple-600 text-white shadow-md shadow-indigo-600/30 scale-105'
                     : 'bg-slate-800/80 text-slate-300 hover:bg-slate-700 hover:text-white border border-slate-700/60'
                 }`}
               >
@@ -186,230 +265,204 @@ export const MathPhilosophySection: React.FC<MathPhilosophySectionProps> = () =>
 
         </div>
 
-        {/* Minimalist Cards Grid with Staggered Transition & Glow */}
+        {/* Thinkers Cards Grid */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-5 sm:gap-6">
-          {filteredThinkers.map((thinker, idx) => {
-            const isSelected = selectedMathematician?.id === thinker.id;
+          {filteredThinkers.map((thinker) => {
             const theme = FIELD_THEMES[thinker.field] || FIELD_THEMES['Calculus & Analysis'];
 
             return (
               <div
                 key={thinker.id}
-                id={`mathematician-card-${thinker.id}`}
+                id={`thinker-card-${thinker.id}`}
                 onClick={() => setSelectedMathematician(thinker)}
-                className={`group relative rounded-3xl p-6 transition-all duration-300 cursor-pointer border flex flex-col justify-between overflow-hidden hover:-translate-y-2 hover:shadow-2xl ${
-                  isSelected
-                    ? 'bg-slate-900/95 border-indigo-400 ring-2 ring-indigo-400/70 shadow-2xl shadow-indigo-500/40'
-                    : `bg-slate-900/90 hover:bg-slate-850/95 border-slate-800/90 ${theme.borderHover}`
-                }`}
-                style={{
-                  animationDelay: `${(idx % 8) * 0.05}s`
-                }}
+                className={`group relative rounded-3xl p-6 transition-all duration-300 cursor-pointer border flex flex-col justify-between overflow-hidden hover:-translate-y-2 hover:shadow-2xl bg-slate-900/90 border-slate-800 ${theme.borderHover}`}
               >
-                {/* Dynamic Ambient Backlight Glow on Card Hover */}
-                <div className={`absolute -inset-px rounded-3xl bg-gradient-to-br ${theme.glow} opacity-0 group-hover:opacity-100 transition-all duration-500 pointer-events-none`} />
-
-                {/* Background formula watermark rendered using MathText */}
-                <div className="absolute -right-3 -bottom-3 opacity-10 group-hover:opacity-25 transition-opacity text-2xl sm:text-3xl select-none pointer-events-none text-indigo-300">
-                  <MathText text={`$${thinker.symbol}$`} />
-                </div>
+                {/* Background Hover Aura */}
+                <div className={`absolute inset-0 bg-gradient-to-br ${theme.glow} opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none`} />
 
                 <div className="space-y-4 relative z-10">
-                  
-                  {/* Top Row: Field badge & Era */}
+                  {/* Top Metadata row */}
                   <div className="flex items-center justify-between gap-2">
-                    <span className={`px-2.5 py-0.5 rounded-lg text-[10px] font-extrabold uppercase tracking-wider border shadow-xs transition-all ${theme.badge}`}>
+                    <span className={`px-2.5 py-1 rounded-full text-[10px] font-black uppercase tracking-wider border ${theme.badge}`}>
                       {thinker.field}
                     </span>
-                    <span className="text-[11px] font-mono text-slate-400 font-medium">
+                    <span className="text-xs font-bold text-slate-400 font-mono">
                       {thinker.era}
                     </span>
                   </div>
 
                   {/* Thinker Name & Title */}
-                  <div className="space-y-1">
-                    <h3 className="text-base sm:text-lg font-black text-white group-hover:text-white transition-colors flex items-center justify-between gap-1">
+                  <div>
+                    <h3 className="text-lg font-black text-white group-hover:text-cyan-300 transition-colors flex items-center justify-between">
                       <span>{thinker.name}</span>
+                      <ChevronRight className="w-4 h-4 text-slate-600 group-hover:text-cyan-400 group-hover:translate-x-1 transition-all" />
                     </h3>
-                    <p className={`text-xs font-medium line-clamp-1 ${theme.accent}`}>
+                    <p className="text-xs text-slate-400 line-clamp-1 mt-0.5 font-medium">
                       {thinker.title}
                     </p>
                   </div>
 
-                  {/* Famous Quote Teaser (Italicized) */}
-                  <div className="p-3.5 rounded-2xl bg-slate-950/75 border border-slate-800/80 space-y-1.5 group-hover:border-slate-700 transition-colors shadow-inner">
-                    <div className="flex items-start gap-2">
-                      <Quote className="w-3.5 h-3.5 text-amber-400 shrink-0 mt-0.5 fill-amber-400" />
-                      <p className="text-xs font-serif italic text-slate-300 line-clamp-2 leading-relaxed">
-                        &ldquo;{thinker.famousQuote}&rdquo;
-                      </p>
-                    </div>
+                  {/* Philosophical Quote Card */}
+                  <div className="p-3.5 rounded-2xl bg-slate-950/80 border border-slate-800/80 relative text-xs text-slate-300 leading-relaxed font-serif italic group-hover:border-slate-700 transition-colors">
+                    <Quote className="w-4 h-4 text-indigo-400/40 absolute top-2.5 right-2.5 pointer-events-none" />
+                    <p className="line-clamp-3">&ldquo;{thinker.famousQuote}&rdquo;</p>
                   </div>
 
+                  {/* Mathematical Symbol / Landmark Formula Preview */}
+                  <div className={`p-2.5 rounded-xl border text-center font-mono text-xs overflow-x-auto ${theme.formulaBg}`}>
+                    <MathText text={`$$${thinker.symbol}$$`} displayMode />
+                  </div>
                 </div>
 
-                {/* Bottom Action Hint */}
-                <div className="pt-4 mt-4 border-t border-slate-800/80 flex items-center justify-between text-xs font-bold text-slate-400 group-hover:text-white relative z-10">
-                  <span className="text-[11px] font-semibold text-slate-400 group-hover:text-slate-200">
-                    Click to explore details
+                {/* Card Footer */}
+                <div className="pt-4 mt-4 border-t border-slate-800/80 flex items-center justify-between text-xs relative z-10">
+                  <span className="text-[11px] font-semibold text-slate-400 flex items-center gap-1">
+                    <Globe className="w-3.5 h-3.5 text-slate-500" />
+                    {thinker.nationality}
                   </span>
-                  <div className={`w-7 h-7 rounded-full bg-slate-800 group-hover:bg-gradient-to-r ${theme.btnGrad} group-hover:text-white flex items-center justify-center transition-all group-hover:scale-110 shadow-xs`}>
-                    <ChevronRight className="w-4 h-4" />
-                  </div>
+                  
+                  <span className={`font-bold flex items-center gap-1 ${theme.accent} group-hover:underline text-[11px]`}>
+                    <span>Philosophy &amp; Insights</span>
+                    <Sparkles className="w-3 h-3" />
+                  </span>
                 </div>
-
               </div>
             );
           })}
         </div>
 
-        {/* Modal: Full Mathematical & Philosophical Details for Selected Thinker */}
-        {selectedMathematician && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 sm:p-6 bg-slate-950/85 backdrop-blur-md animate-fade-in overflow-y-auto">
-            <div 
-              className="bg-slate-900 rounded-3xl border border-indigo-500/40 shadow-2xl max-w-3xl w-full p-6 sm:p-8 space-y-6 max-h-[90vh] overflow-y-auto relative animate-slide-fade text-slate-200"
-              onClick={(e) => e.stopPropagation()}
-            >
-              
-              {/* Close Button */}
-              <button
-                onClick={() => setSelectedMathematician(null)}
-                className="absolute right-5 top-5 p-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white transition-colors cursor-pointer"
-                title="Close"
-              >
-                <X className="w-5 h-5" />
-              </button>
-
-              {/* Modal Header */}
-              {(() => {
-                const modalTheme = FIELD_THEMES[selectedMathematician.field] || FIELD_THEMES['Calculus & Analysis'];
-                return (
-                  <>
-                    <div className="space-y-2 pr-10">
-                      <div className="flex flex-wrap items-center gap-2">
-                        <span className={`px-3 py-0.5 rounded-full text-xs font-bold border ${modalTheme.badge}`}>
-                          {selectedMathematician.field}
-                        </span>
-                        <span className="text-xs text-slate-400 font-mono">
-                          {selectedMathematician.era} • {selectedMathematician.nationality}
-                        </span>
-                      </div>
-
-                      <h3 className="text-2xl sm:text-3xl font-black text-white">
-                        {selectedMathematician.name}
-                      </h3>
-                      
-                      {selectedMathematician.latinName && (
-                        <p className="text-xs text-slate-400 italic">
-                          Historical / Latin name: {selectedMathematician.latinName}
-                        </p>
-                      )}
-
-                      <p className={`text-sm font-semibold ${modalTheme.accent}`}>
-                        {selectedMathematician.title}
-                      </p>
-                    </div>
-
-                    {/* Quote Block */}
-                    <div className="p-5 rounded-2xl bg-gradient-to-r from-amber-950/40 via-slate-800 to-indigo-950/40 border border-amber-500/30 space-y-2">
-                      <div className="flex items-start gap-3">
-                        <Quote className="w-5 h-5 text-amber-400 shrink-0 mt-0.5 fill-amber-400" />
-                        <p className="text-sm sm:text-base font-serif italic text-amber-100 leading-relaxed">
-                          &ldquo;{selectedMathematician.famousQuote}&rdquo;
-                        </p>
-                      </div>
-                    </div>
-
-                    {/* Philosophical Perspective on Mathematics */}
-                    <div className="space-y-2">
-                      <div className="flex items-center gap-2 text-xs font-bold text-indigo-300 uppercase tracking-wider">
-                        <Lightbulb className="w-4 h-4 text-amber-400" />
-                        <span>Philosophical View &amp; Epistemology:</span>
-                      </div>
-                      <p className="text-xs sm:text-sm text-slate-300 leading-relaxed bg-slate-800/50 p-4 rounded-2xl border border-slate-700/60">
-                        {selectedMathematician.philosophicalView}
-                      </p>
-                    </div>
-
-                    {/* Major Theorems & Breakthroughs (With KaTeX) */}
-                    <div className="space-y-3">
-                      <div className="flex items-center gap-2 text-xs font-bold text-indigo-300 uppercase tracking-wider">
-                        <Sparkles className="w-4 h-4 text-emerald-400" />
-                        <span>Major Mathematical Discoveries &amp; Formulas:</span>
-                      </div>
-
-                      <div className="grid grid-cols-1 gap-3">
-                        {selectedMathematician.majorBreakthroughs.map((breakthrough, idx) => (
-                          <div
-                            key={idx}
-                            className="p-4 rounded-2xl bg-slate-800/80 border border-slate-700 space-y-2"
-                          >
-                            <div className="flex items-center justify-between gap-2">
-                              <h4 className="text-xs sm:text-sm font-bold text-white flex items-center gap-2">
-                                <span className={`w-5 h-5 rounded-md bg-gradient-to-r ${modalTheme.btnGrad} text-white text-[10px] font-bold flex items-center justify-center`}>
-                                  {idx + 1}
-                                </span>
-                                <span>{breakthrough.title}</span>
-                              </h4>
-                            </div>
-
-                            <p className="text-xs text-slate-300 leading-relaxed">
-                              {breakthrough.description}
-                            </p>
-
-                            {breakthrough.formula && (
-                              <div className={`p-2.5 rounded-xl border ${modalTheme.formulaBg} text-xs sm:text-sm font-mono overflow-x-auto text-center`}>
-                                <MathText text={`$${breakthrough.formula}$`} />
-                              </div>
-                            )}
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-
-                    {/* Philosophical Contribution & Modern Impact Grid */}
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                      
-                      <div className="p-4 rounded-2xl bg-slate-800/50 border border-slate-700/60 space-y-1.5">
-                        <span className="text-[11px] font-bold uppercase tracking-wider text-purple-400 flex items-center gap-1.5">
-                          <Compass className="w-3.5 h-3.5" />
-                          Philosophical Contribution:
-                        </span>
-                        <p className="text-xs text-slate-300 leading-relaxed">
-                          {selectedMathematician.philosophicalContribution}
-                        </p>
-                      </div>
-
-                      <div className="p-4 rounded-2xl bg-slate-800/50 border border-slate-700/60 space-y-1.5">
-                        <span className="text-[11px] font-bold uppercase tracking-wider text-emerald-400 flex items-center gap-1.5">
-                          <Globe className="w-3.5 h-3.5" />
-                          Impact on Modern World &amp; Physics:
-                        </span>
-                        <p className="text-xs text-slate-300 leading-relaxed">
-                          {selectedMathematician.impactOnModernWorld}
-                        </p>
-                      </div>
-
-                    </div>
-
-                    {/* Footer Modal Action */}
-                    <div className="pt-3 border-t border-slate-800 flex justify-end">
-                      <button
-                        onClick={() => setSelectedMathematician(null)}
-                        className={`px-6 py-2.5 rounded-xl bg-gradient-to-r ${modalTheme.btnGrad} text-white font-bold text-xs shadow-md transition-all cursor-pointer hover:opacity-90 active:scale-95`}
-                      >
-                        Close Exploration
-                      </button>
-                    </div>
-                  </>
-                );
-              })()}
-
-            </div>
+        {filteredThinkers.length === 0 && (
+          <div className="text-center py-16 bg-slate-900/40 rounded-3xl border border-slate-800 space-y-3">
+            <Search className="w-10 h-10 text-slate-600 mx-auto" />
+            <h4 className="text-base font-bold text-slate-300">No {activeMainSection === 'physicists' ? 'physicists' : 'mathematicians'} match your search</h4>
+            <p className="text-xs text-slate-500">Try searching for a different keyword, quote, or clear filters.</p>
           </div>
         )}
 
       </div>
+
+      {/* 📖 THINKER PHILOSOPHY DEEP-DIVE MODAL */}
+      {selectedMathematician && (
+        <div 
+          className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/85 backdrop-blur-xl animate-fade-in"
+          onClick={() => setSelectedMathematician(null)}
+        >
+          <div 
+            className="bg-slate-900 border border-slate-800 text-white rounded-3xl w-full max-w-3xl max-h-[90vh] overflow-y-auto shadow-2xl relative animate-scale-up"
+            onClick={(e) => e.stopPropagation()}
+          >
+            {/* Modal Header */}
+            <div className="sticky top-0 bg-slate-900/95 backdrop-blur-md p-6 border-b border-slate-800 flex items-start justify-between z-20">
+              <div className="flex items-center gap-3">
+                <div className={`w-12 h-12 rounded-2xl bg-gradient-to-br ${selectedMathematician.avatarColor} flex items-center justify-center font-black text-lg shadow-lg`}>
+                  {selectedMathematician.thinkerType === 'physicist' ? <Atom className="w-6 h-6" /> : <Sigma className="w-6 h-6" />}
+                </div>
+                <div>
+                  <div className="flex items-center gap-2">
+                    <h3 className="text-xl font-black text-white">{selectedMathematician.name}</h3>
+                    {selectedMathematician.latinName && (
+                      <span className="text-xs text-slate-400 italic">({selectedMathematician.latinName})</span>
+                    )}
+                  </div>
+                  <p className="text-xs text-slate-400">{selectedMathematician.title}</p>
+                </div>
+              </div>
+
+              <button
+                onClick={() => setSelectedMathematician(null)}
+                className="p-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-400 hover:text-white transition-colors cursor-pointer"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            {/* Modal Body */}
+            <div className="p-6 space-y-6">
+              
+              {/* Quick Info Badges */}
+              <div className="flex flex-wrap items-center gap-2 text-xs">
+                <span className="px-3 py-1 rounded-xl bg-indigo-950/90 text-indigo-300 border border-indigo-500/40 font-bold">
+                  {selectedMathematician.field}
+                </span>
+                <span className="px-3 py-1 rounded-xl bg-slate-800 text-slate-300 border border-slate-700 font-mono">
+                  {selectedMathematician.era}
+                </span>
+                <span className="px-3 py-1 rounded-xl bg-slate-800 text-slate-300 border border-slate-700 flex items-center gap-1.5">
+                  <Globe className="w-3.5 h-3.5 text-slate-400" />
+                  {selectedMathematician.nationality}
+                </span>
+              </div>
+
+              {/* Famous Quote Banner */}
+              <div className="p-5 rounded-2xl bg-gradient-to-r from-indigo-950/80 via-slate-900 to-purple-950/80 border border-indigo-500/30 relative">
+                <Quote className="w-6 h-6 text-indigo-400/30 absolute top-3 right-3" />
+                <p className="text-sm sm:text-base font-serif italic text-indigo-100 leading-relaxed">
+                  &ldquo;{selectedMathematician.famousQuote}&rdquo;
+                </p>
+              </div>
+
+              {/* Philosophical Epistemology */}
+              <div className="space-y-2">
+                <h4 className="text-sm font-black uppercase tracking-wider text-indigo-400 flex items-center gap-2">
+                  <Lightbulb className="w-4 h-4" />
+                  Philosophical View &amp; Epistemology
+                </h4>
+                <p className="text-xs sm:text-sm text-slate-300 leading-relaxed p-4 rounded-2xl bg-slate-950/60 border border-slate-800">
+                  {selectedMathematician.philosophicalView}
+                </p>
+              </div>
+
+              {/* Major Mathematical Breakthroughs with LaTeX */}
+              <div className="space-y-3">
+                <h4 className="text-sm font-black uppercase tracking-wider text-emerald-400 flex items-center gap-2">
+                  <Award className="w-4 h-4" />
+                  Landmark Discoveries &amp; Mathematical Formulations
+                </h4>
+                <div className="space-y-3">
+                  {selectedMathematician.majorBreakthroughs.map((b, idx) => (
+                    <div key={idx} className="p-4 rounded-2xl bg-slate-950/80 border border-slate-800 space-y-2">
+                      <h5 className="text-xs sm:text-sm font-bold text-white flex items-center justify-between">
+                        <span>{b.title}</span>
+                      </h5>
+                      <p className="text-xs text-slate-400 leading-relaxed">
+                        <MathText text={b.description} />
+                      </p>
+                      {b.formula && (
+                        <div className="p-2.5 rounded-xl bg-slate-900 border border-slate-800 text-center font-mono text-xs overflow-x-auto text-emerald-300">
+                          <MathText text={`$$${b.formula}$$`} displayMode />
+                        </div>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              {/* Impact on Modern World */}
+              <div className="space-y-2">
+                <h4 className="text-sm font-black uppercase tracking-wider text-cyan-400 flex items-center gap-2">
+                  <Zap className="w-4 h-4" />
+                  Impact on Modern Science &amp; Technology
+                </h4>
+                <p className="text-xs sm:text-sm text-slate-300 leading-relaxed p-4 rounded-2xl bg-slate-950/60 border border-slate-800">
+                  {selectedMathematician.impactOnModernWorld}
+                </p>
+              </div>
+
+            </div>
+
+            {/* Modal Footer */}
+            <div className="p-4 bg-slate-950/80 border-t border-slate-800 flex justify-end">
+              <button
+                onClick={() => setSelectedMathematician(null)}
+                className="px-5 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-500 font-bold text-xs text-white transition-all cursor-pointer"
+              >
+                Close Thinker Profile
+              </button>
+            </div>
+
+          </div>
+        </div>
+      )}
 
     </section>
   );

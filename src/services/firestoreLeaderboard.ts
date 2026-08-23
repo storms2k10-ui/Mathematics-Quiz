@@ -25,6 +25,7 @@ export class FirestoreLeaderboardService {
       const docRef = doc(db, LEADERBOARD_COLLECTION, entry.id);
       await setDoc(docRef, {
         ...entry,
+        track: entry.track || 'Elementary Mathematics',
         savedAt: Date.now()
       }, { merge: true });
     } catch (error) {
@@ -38,7 +39,8 @@ export class FirestoreLeaderboardService {
    */
   static async fetchRanked(
     classLevel?: ClassLevel | 'all',
-    mode: 'all' | 'practice' | 'exam' = 'practice'
+    mode: 'all' | 'practice' | 'exam' = 'practice',
+    track?: string | 'all'
   ): Promise<LeaderboardEntry[]> {
     try {
       const colRef = collection(db, LEADERBOARD_COLLECTION);
@@ -53,9 +55,21 @@ export class FirestoreLeaderboardService {
       
       snap.forEach((d) => {
         const data = d.data() as LeaderboardEntry;
-        if (mode === 'all' || !data.mode || data.mode === mode) {
-          entries.push(data);
+        // Strict class isolation check
+        if (classLevel && classLevel !== 'all' && Number(data.classLevel) !== Number(classLevel)) {
+          return;
         }
+        // Exclude legacy mock test data if requested
+        if (data.mode === 'exam' || (data.chapterName && data.chapterName.toLowerCase().includes('mock'))) {
+          if (mode === 'practice') return;
+        }
+        if (mode !== 'all' && data.mode && data.mode !== mode) {
+          return;
+        }
+        if (track && track !== 'all' && data.track && data.track !== track) {
+          return;
+        }
+        entries.push(data);
       });
 
       // Sort client-side by accuracy -> correct count -> fastest time -> newest
@@ -84,7 +98,8 @@ export class FirestoreLeaderboardService {
    */
   static subscribeToLeaderboard(
     classLevel: ClassLevel | 'all',
-    onUpdate: (entries: LeaderboardEntry[]) => void
+    onUpdate: (entries: LeaderboardEntry[]) => void,
+    track?: string | 'all'
   ): Unsubscribe {
     const colRef = collection(db, LEADERBOARD_COLLECTION);
     const q = classLevel && classLevel !== 'all'
@@ -94,7 +109,14 @@ export class FirestoreLeaderboardService {
     return onSnapshot(q, (snap) => {
       const entries: LeaderboardEntry[] = [];
       snap.forEach((d) => {
-        entries.push(d.data() as LeaderboardEntry);
+        const data = d.data() as LeaderboardEntry;
+        if (classLevel && classLevel !== 'all' && Number(data.classLevel) !== Number(classLevel)) {
+          return;
+        }
+        if (track && track !== 'all' && data.track && data.track !== track) {
+          return;
+        }
+        entries.push(data);
       });
 
       entries.sort((a, b) => {

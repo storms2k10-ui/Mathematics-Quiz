@@ -16,7 +16,10 @@ import {
   Calculator,
   Compass,
   Zap,
-  ArrowRight
+  ArrowRight,
+  Atom,
+  Dna,
+  Sigma
 } from 'lucide-react';
 import { ALL_DEFINITIONS } from '../data/definitionsData';
 import { ALL_THEOREMS } from '../data/theoremsData';
@@ -27,18 +30,22 @@ import { MathText } from './MathText';
 import { DefinitionDiagram } from './DefinitionDiagram';
 
 export type ContentSection = 'definitions' | 'theorems' | 'properties' | 'formulas';
+export type ContentSubject = 'mathematics' | 'physics' | 'biology';
 
 interface ContentViewProps {
   initialSection?: ContentSection;
+  initialSubject?: ContentSubject;
   onSelectClass?: (classLevel: ClassLevel) => void;
   onStartChapterQuiz?: (chapterId: string, chapterTitle: string, classLevel: ClassLevel) => void;
 }
 
 export const ContentView: React.FC<ContentViewProps> = ({
   initialSection = 'definitions',
+  initialSubject = 'mathematics',
   onSelectClass,
   onStartChapterQuiz,
 }) => {
+  const [selectedSubject, setSelectedSubject] = useState<ContentSubject>(initialSubject);
   const [activeSection, setActiveSection] = useState<ContentSection>(initialSection);
   const [selectedClass, setSelectedClass] = useState<ClassLevel | 'all'>('all');
   const [searchQuery, setSearchQuery] = useState('');
@@ -177,80 +184,145 @@ export const ContentView: React.FC<ContentViewProps> = ({
   return (
     <div id="mathematics-content-view" className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-12 space-y-8 animate-fade-in">
       
-      {/* Top Header Banner */}
-      <div className="p-6 sm:p-8 rounded-3xl bg-slate-900 text-white relative overflow-hidden border border-slate-800 shadow-xl">
-        <div className="absolute top-0 right-0 -mr-16 -mt-16 w-64 h-64 bg-indigo-500/10 rounded-full blur-3xl pointer-events-none" />
-        
-        <div className="relative z-10 space-y-4 max-w-3xl">
-          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-indigo-500/20 border border-indigo-400/40 text-indigo-300 text-xs font-black uppercase tracking-wider">
-            <BookOpen className="w-3.5 h-3.5" />
-            <span>Curriculum &amp; Reference Hub</span>
-          </div>
+      {/* 🌟 SUBJECT SWITCHER AT THE VERY TOP: MATHEMATICS, PHYSICS, BIOLOGY */}
+      <div className="flex justify-center">
+        <div className="p-1.5 bg-slate-100 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl flex items-center gap-1.5 shadow-md max-w-lg w-full">
+          <button
+            onClick={() => setSelectedSubject('mathematics')}
+            className={`flex-1 py-2.5 px-3 rounded-xl font-bold text-xs sm:text-sm flex items-center justify-center gap-2 transition-all cursor-pointer ${
+              selectedSubject === 'mathematics'
+                ? 'bg-indigo-600 text-white shadow-md shadow-indigo-600/30'
+                : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-200/60 dark:hover:bg-slate-800'
+            }`}
+          >
+            <Sigma className="w-4 h-4" />
+            <span>Mathematics</span>
+          </button>
 
-          <h1 className="text-2xl sm:text-4xl font-extrabold tracking-tight text-white font-sans">
-            Mathematics Content
-          </h1>
+          <button
+            onClick={() => setSelectedSubject('physics')}
+            className={`flex-1 py-2.5 px-3 rounded-xl font-bold text-xs sm:text-sm flex items-center justify-center gap-2 transition-all cursor-pointer ${
+              selectedSubject === 'physics'
+                ? 'bg-cyan-600 text-white shadow-md shadow-cyan-600/30'
+                : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-200/60 dark:hover:bg-slate-800'
+            }`}
+          >
+            <Atom className="w-4 h-4" />
+            <span>Physics</span>
+          </button>
 
-          <p className="text-xs sm:text-sm text-slate-300 leading-relaxed font-sans">
-            Access comprehensive mathematical resources categorized into <strong className="text-indigo-200">Definitions</strong>, <strong className="text-indigo-200">Theorems</strong>, <strong className="text-indigo-200">Properties</strong>, and <strong className="text-indigo-200">Formulas</strong> with rigorous KaTeX equations and geometric diagrams.
-          </p>
-
-          {/* Top Main Section Switcher Buttons */}
-          <div className="pt-2 grid grid-cols-2 sm:grid-cols-4 gap-2.5">
-            <button
-              id="content-tab-definitions"
-              onClick={() => setActiveSection('definitions')}
-              className={`px-3.5 py-2.5 rounded-xl text-xs sm:text-sm font-bold flex items-center justify-center gap-2 transition-all cursor-pointer ${
-                activeSection === 'definitions'
-                  ? 'bg-indigo-600 text-white shadow-md shadow-indigo-600/30'
-                  : 'bg-white/10 hover:bg-white/20 text-slate-200'
-              }`}
-            >
-              <BookOpen className="w-4 h-4 text-emerald-400" />
-              <span>Definitions ({ALL_DEFINITIONS.length})</span>
-            </button>
-
-            <button
-              id="content-tab-theorems"
-              onClick={() => setActiveSection('theorems')}
-              className={`px-3.5 py-2.5 rounded-xl text-xs sm:text-sm font-bold flex items-center justify-center gap-2 transition-all cursor-pointer ${
-                activeSection === 'theorems'
-                  ? 'bg-indigo-600 text-white shadow-md shadow-indigo-600/30'
-                  : 'bg-white/10 hover:bg-white/20 text-slate-200'
-              }`}
-            >
-              <Compass className="w-4 h-4 text-indigo-400" />
-              <span>Theorems ({ALL_THEOREMS.length})</span>
-            </button>
-
-            <button
-              id="content-tab-properties"
-              onClick={() => setActiveSection('properties')}
-              className={`px-3.5 py-2.5 rounded-xl text-xs sm:text-sm font-bold flex items-center justify-center gap-2 transition-all cursor-pointer ${
-                activeSection === 'properties'
-                  ? 'bg-indigo-600 text-white shadow-md shadow-indigo-600/30'
-                  : 'bg-white/10 hover:bg-white/20 text-slate-200'
-              }`}
-            >
-              <Layers className="w-4 h-4 text-purple-400" />
-              <span>Properties ({ALL_PROPERTIES.length})</span>
-            </button>
-
-            <button
-              id="content-tab-formulas"
-              onClick={() => setActiveSection('formulas')}
-              className={`px-3.5 py-2.5 rounded-xl text-xs sm:text-sm font-bold flex items-center justify-center gap-2 transition-all cursor-pointer ${
-                activeSection === 'formulas'
-                  ? 'bg-indigo-600 text-white shadow-md shadow-indigo-600/30'
-                  : 'bg-white/10 hover:bg-white/20 text-slate-200'
-              }`}
-            >
-              <Calculator className="w-4 h-4 text-amber-400" />
-              <span>Formulas ({ALL_FORMULAS.length})</span>
-            </button>
-          </div>
+          <button
+            onClick={() => setSelectedSubject('biology')}
+            className={`flex-1 py-2.5 px-3 rounded-xl font-bold text-xs sm:text-sm flex items-center justify-center gap-2 transition-all cursor-pointer ${
+              selectedSubject === 'biology'
+                ? 'bg-emerald-600 text-white shadow-md shadow-emerald-600/30'
+                : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-200/60 dark:hover:bg-slate-800'
+            }`}
+          >
+            <Dna className="w-4 h-4" />
+            <span>Biology</span>
+          </button>
         </div>
       </div>
+
+      {/* NON-MATHEMATICS SUBJECT PLACEHOLDER (PHYSICS / BIOLOGY) */}
+      {selectedSubject !== 'mathematics' && (
+        <div className="p-8 sm:p-12 rounded-3xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-center space-y-4 shadow-xl">
+          <div className="w-16 h-16 rounded-2xl mx-auto flex items-center justify-center bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400">
+            {selectedSubject === 'physics' ? <Atom className="w-8 h-8 text-cyan-500" /> : <Dna className="w-8 h-8 text-emerald-500" />}
+          </div>
+          <h2 className="text-xl sm:text-2xl font-black capitalize text-slate-900 dark:text-white">
+            {selectedSubject} Content Section
+          </h2>
+          <p className="text-sm text-slate-500 dark:text-slate-400 max-w-md mx-auto">
+            The {selectedSubject} curriculum formulas, definitions, and theorems repository is currently under preparation. No content has been added to this section yet.
+          </p>
+          <button
+            onClick={() => setSelectedSubject('mathematics')}
+            className="px-5 py-2.5 rounded-xl bg-indigo-600 text-white font-bold text-xs shadow-md shadow-indigo-600/20 hover:bg-indigo-700 transition-all cursor-pointer"
+          >
+            Explore Mathematics Section
+          </button>
+        </div>
+      )}
+
+      {/* MATHEMATICS CONTENT SECTIONS (DEFINITIONS, THEOREMS, PROPERTIES, FORMULAS) */}
+      {selectedSubject === 'mathematics' && (
+        <>
+          {/* Top Header Banner */}
+          <div className="p-6 sm:p-8 rounded-3xl bg-slate-900 text-white relative overflow-hidden border border-slate-800 shadow-xl">
+            <div className="absolute top-0 right-0 -mr-16 -mt-16 w-64 h-64 bg-indigo-500/10 rounded-full blur-3xl pointer-events-none" />
+            
+            <div className="relative z-10 space-y-4 max-w-3xl">
+              <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-indigo-500/20 border border-indigo-400/40 text-indigo-300 text-xs font-black uppercase tracking-wider">
+                <BookOpen className="w-3.5 h-3.5" />
+                <span>Mathematics Curriculum &amp; Reference Hub</span>
+              </div>
+
+              <h1 className="text-2xl sm:text-4xl font-extrabold tracking-tight text-white font-sans">
+                Mathematics Content
+              </h1>
+
+              <p className="text-xs sm:text-sm text-slate-300 leading-relaxed font-sans">
+                Access comprehensive mathematical resources categorized into <strong className="text-indigo-200">Definitions</strong>, <strong className="text-indigo-200">Theorems</strong>, <strong className="text-indigo-200">Properties</strong>, and <strong className="text-indigo-200">Formulas</strong> with rigorous KaTeX equations and geometric diagrams.
+              </p>
+
+              {/* Top Main Section Switcher Buttons */}
+              <div className="pt-2 grid grid-cols-2 sm:grid-cols-4 gap-2.5">
+                <button
+                  id="content-tab-definitions"
+                  onClick={() => setActiveSection('definitions')}
+                  className={`px-3.5 py-2.5 rounded-xl text-xs sm:text-sm font-bold flex items-center justify-center gap-2 transition-all cursor-pointer ${
+                    activeSection === 'definitions'
+                      ? 'bg-indigo-600 text-white shadow-md shadow-indigo-600/30'
+                      : 'bg-white/10 hover:bg-white/20 text-slate-200'
+                  }`}
+                >
+                  <BookOpen className="w-4 h-4 text-emerald-400" />
+                  <span>Definitions ({ALL_DEFINITIONS.length})</span>
+                </button>
+
+                <button
+                  id="content-tab-theorems"
+                  onClick={() => setActiveSection('theorems')}
+                  className={`px-3.5 py-2.5 rounded-xl text-xs sm:text-sm font-bold flex items-center justify-center gap-2 transition-all cursor-pointer ${
+                    activeSection === 'theorems'
+                      ? 'bg-indigo-600 text-white shadow-md shadow-indigo-600/30'
+                      : 'bg-white/10 hover:bg-white/20 text-slate-200'
+                  }`}
+                >
+                  <Compass className="w-4 h-4 text-indigo-400" />
+                  <span>Theorems ({ALL_THEOREMS.length})</span>
+                </button>
+
+                <button
+                  id="content-tab-properties"
+                  onClick={() => setActiveSection('properties')}
+                  className={`px-3.5 py-2.5 rounded-xl text-xs sm:text-sm font-bold flex items-center justify-center gap-2 transition-all cursor-pointer ${
+                    activeSection === 'properties'
+                      ? 'bg-indigo-600 text-white shadow-md shadow-indigo-600/30'
+                      : 'bg-white/10 hover:bg-white/20 text-slate-200'
+                  }`}
+                >
+                  <Layers className="w-4 h-4 text-purple-400" />
+                  <span>Properties ({ALL_PROPERTIES.length})</span>
+                </button>
+
+                <button
+                  id="content-tab-formulas"
+                  onClick={() => setActiveSection('formulas')}
+                  className={`px-3.5 py-2.5 rounded-xl text-xs sm:text-sm font-bold flex items-center justify-center gap-2 transition-all cursor-pointer ${
+                    activeSection === 'formulas'
+                      ? 'bg-indigo-600 text-white shadow-md shadow-indigo-600/30'
+                      : 'bg-white/10 hover:bg-white/20 text-slate-200'
+                  }`}
+                >
+                  <Calculator className="w-4 h-4 text-amber-400" />
+                  <span>Formulas ({ALL_FORMULAS.length})</span>
+                </button>
+              </div>
+            </div>
+          </div>
 
       {/* SEARCH AND CLASS FILTER CONTROLS FOR DEFINITIONS, THEOREMS, PROPERTIES, FORMULAS */}
       <div className="p-4 sm:p-5 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200/90 dark:border-slate-800 shadow-sm space-y-4">
@@ -683,6 +755,8 @@ export const ContentView: React.FC<ContentViewProps> = ({
             </div>
           ))}
         </div>
+      )}
+        </>
       )}
 
     </div>

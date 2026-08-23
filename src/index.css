@@ -134,4 +134,37 @@
   text-rendering: optimizeLegibility;
 }
 
+/* KaTeX Dark Mode & Inheritance Fixes */
+.katex {
+  color: inherit;
+}
+
+.dark .katex,
+.dark .katex-display,
+.dark .katex .mord,
+.dark .katex .mrel,
+.dark .katex .mbin,
+.dark .katex .mopen,
+.dark .katex .mclose,
+.dark .katex .mpunct,
+.dark .katex .minner,
+.dark .katex .mop {
+  color: #f1f5f9 !important;
+}
+
+.dark .text-emerald-950 .katex,
+.dark .text-emerald-100 .katex,
+.dark .text-emerald-200 .katex,
+.dark .text-emerald-300 .katex,
+.dark .text-emerald-400 .katex {
+  color: #ecfdf5 !important;
+}
+
+.dark .text-rose-950 .katex,
+.dark .text-rose-100 .katex,
+.dark .text-rose-200 .katex,
+.dark .text-rose-300 .katex {
+  color: #fff1f2 !important;
+}
+
 

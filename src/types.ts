@@ -180,6 +180,7 @@ export interface LeaderboardEntry {
   chapterId?: string;
   chapterName: string;
   mode: 'practice' | 'exam';
+  track?: 'Elementary Mathematics' | 'Advanced Mathematics' | 'Elementary Physics' | 'Advanced Physics' | string;
   correctCount: number;
   totalQuestions: number;
   scorePercentage: number;
@@ -187,6 +188,35 @@ export interface LeaderboardEntry {
   formattedTime: string;
   timestamp: number;
   formattedDate: string;
+}
+
+export interface UserTestHistory {
+  id: string;
+  chapterName: string;
+  classLevel: ClassLevel;
+  track: string;
+  scorePercentage: number;
+  correctCount: number;
+  totalQuestions: number;
+  timeSpentSeconds: number;
+  formattedTime: string;
+  timestamp: number;
+  formattedDate: string;
+}
+
+export interface UserProfile {
+  uid: string;
+  email: string;
+  displayName: string;
+  classLevel: ClassLevel;
+  section?: string;
+  createdAt: number;
+  testsAttempted: number;
+  totalQuestionsAnswered: number;
+  totalCorrect: number;
+  totalWrong: number;
+  accuracy: number;
+  history?: UserTestHistory[];
 }
 
 export interface TestAttemptAnswer {

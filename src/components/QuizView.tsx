@@ -439,28 +439,28 @@ export const QuizView: React.FC<QuizViewProps> = ({
               const isSelected = selectedOption === opt;
               const isCorrectAnswer = opt === currentQuestion.correct_answer;
 
-              // Default: light color styling on hover / scroll
-              let optionClasses = 'border-slate-200/90 dark:border-slate-800 bg-white/90 dark:bg-slate-850/80 text-slate-800 dark:text-slate-200 hover:bg-emerald-50/50 dark:hover:bg-emerald-950/30 hover:border-emerald-300 dark:hover:border-emerald-700/80 hover:shadow-md hover:shadow-emerald-500/10 group';
-              let badgeClasses = 'bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-slate-700 group-hover:bg-emerald-100 group-hover:text-emerald-800 dark:group-hover:bg-emerald-950 dark:group-hover:text-emerald-200 group-hover:border-emerald-300 group-hover:scale-105';
+              // Clean, unhighlighted options with crisp white text in dark mode
+              let optionClasses = 'border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 text-slate-900 dark:text-white hover:border-indigo-400 dark:hover:border-indigo-500 group';
+              let badgeClasses = 'bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-white border border-slate-200 dark:border-slate-700';
 
               if (mode === 'practice' && isSubmitted) {
                 if (isCorrectAnswer) {
-                  // Correct answer: Animated light green glow
-                  optionClasses = 'border-emerald-500 bg-emerald-50/95 dark:bg-emerald-950/80 text-emerald-950 dark:text-emerald-100 ring-2 ring-emerald-400 shadow-lg shadow-emerald-500/25 animate-selected-green';
-                  badgeClasses = 'bg-gradient-to-br from-emerald-400 via-emerald-500 to-teal-500 text-white font-black ring-2 ring-emerald-300 shadow-md shadow-emerald-500/40 animate-pulse';
+                  // Correct answer: Clean emerald border & subtle background, crisp white text in dark mode
+                  optionClasses = 'border-emerald-500 dark:border-emerald-500 bg-emerald-50/30 dark:bg-slate-900 text-slate-900 dark:text-white ring-1 ring-emerald-500/50';
+                  badgeClasses = 'bg-emerald-600 dark:bg-emerald-600 text-white font-bold';
                 } else if (isSelected && !isCorrectAnswer) {
-                  // User chose incorrect: Soft red
-                  optionClasses = 'border-rose-500 bg-rose-50/90 dark:bg-rose-950/60 text-rose-950 dark:text-rose-200 ring-2 ring-rose-500/40 shadow-sm';
-                  badgeClasses = 'bg-rose-600 text-white font-bold';
+                  // User chose incorrect: Clean rose border & subtle background, crisp white text in dark mode
+                  optionClasses = 'border-rose-500 dark:border-rose-500 bg-rose-50/30 dark:bg-slate-900 text-slate-900 dark:text-white ring-1 ring-rose-500/50';
+                  badgeClasses = 'bg-rose-600 dark:bg-rose-600 text-white font-bold';
                 } else {
-                  // Unselected options: Subdued
-                  optionClasses = 'opacity-40 border-slate-200 dark:border-slate-800 bg-slate-50/30 dark:bg-slate-800/30 text-slate-500';
-                  badgeClasses = 'bg-slate-200 dark:bg-slate-800 text-slate-400 dark:text-slate-600';
+                  // Unselected options: Clean subdued
+                  optionClasses = 'opacity-50 border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 text-slate-700 dark:text-white';
+                  badgeClasses = 'bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-300';
                 }
               } else if (isSelected) {
-                // Clicked / Selected Option: Animated Light Green
-                optionClasses = 'border-emerald-500 dark:border-emerald-400 bg-emerald-100/90 dark:bg-emerald-950/80 text-emerald-950 dark:text-emerald-100 ring-2 ring-emerald-400 shadow-[0_0_20px_rgba(52,211,153,0.35)] animate-selected-green';
-                badgeClasses = 'bg-gradient-to-br from-emerald-400 via-emerald-500 to-teal-500 text-white font-black ring-2 ring-emerald-300 shadow-md shadow-emerald-500/40 animate-pulse';
+                // Clicked / Selected Option: Subtle border without aggressive highlight
+                optionClasses = 'border-indigo-500 dark:border-indigo-400 bg-indigo-50/20 dark:bg-slate-900 text-slate-900 dark:text-white ring-1 ring-indigo-500/50';
+                badgeClasses = 'bg-indigo-600 dark:bg-indigo-600 text-white font-bold';
               }
 
               const staggerClass = `animate-option-stagger-${idx}`;

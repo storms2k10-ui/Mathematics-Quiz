@@ -1,19 +1,26 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { 
   X, 
   Trophy, 
-  Search, 
-  Zap, 
   Sparkles,
-  RefreshCw,
+  Clock, 
+  Atom,
+  Sigma,
+  Zap,
+  Star,
   CheckCircle2,
-  Clock,
-  User,
-  GraduationCap
+  XCircle,
+  Award
 } from 'lucide-react';
 import { LeaderboardEntry, ClassLevel } from '../types';
 import { MathService } from '../services/mathService';
 import { FirestoreLeaderboardService } from '../services/firestoreLeaderboard';
+
+export type LeaderboardTrack = 
+  | 'Elementary Mathematics' 
+  | 'Advanced Mathematics' 
+  | 'Elementary Physics' 
+  | 'Advanced Physics';
 
 interface LeaderboardModalProps {
   isOpen: boolean;
@@ -26,90 +33,147 @@ export const LeaderboardModal: React.FC<LeaderboardModalProps> = ({
   onClose,
   initialClass = 'all',
 }) => {
-  const [entries, setEntries] = useState<LeaderboardEntry[]>([]);
-  const [searchQuery, setSearchQuery] = useState('');
-  const [selectedClass, setSelectedClass] = useState<ClassLevel | 'all'>(initialClass);
-  const [isSyncing, setIsSyncing] = useState(false);
-  const [lastSyncedTime, setLastSyncedTime] = useState<string>('Just now');
-  const [syncSource, setSyncSource] = useState<'cloud' | 'server' | 'local'>('cloud');
+  const [allEntries, setAllEntries] = useState<LeaderboardEntry[]>([]);
+  const [selectedClass, setSelectedClass] = useState<ClassLevel | 'all'>('all');
+  const [selectedTrack, setSelectedTrack] = useState<LeaderboardTrack>('Elementary Mathematics');
 
-  const loadLeaderboard = useCallback(async (showLoading = true) => {
-    if (showLoading) setIsSyncing(true);
+  const loadLeaderboardData = useCallback(async () => {
     try {
-      // 1. Try Firebase Firestore Cloud Database first (Global Realtime Persistence)
-      const firestoreData = await FirestoreLeaderboardService.fetchRanked(selectedClass, 'practice');
+      // 1. Try Firebase Firestore Cloud Database first
+      const firestoreData = await FirestoreLeaderboardService.fetchRanked('all', 'practice', selectedTrack);
       if (firestoreData && firestoreData.length > 0) {
-        setEntries(firestoreData);
-        setSyncSource('cloud');
-        setLastSyncedTime(new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' }));
-        if (showLoading) setIsSyncing(false);
+        setAllEntries(firestoreData);
         return;
       }
 
       // 2. Fallback to Node.js Server API
-      const serverEntries = await MathService.fetchServerLeaderboard(selectedClass, 'practice');
+      const serverEntries = await MathService.fetchServerLeaderboard('all', 'practice');
       if (serverEntries && serverEntries.length > 0) {
-        setEntries(serverEntries);
-        setSyncSource('server');
+        setAllEntries(serverEntries);
       } else {
-        const local = MathService.getRankedLeaderboard(selectedClass, 'practice');
-        setEntries(local);
-        setSyncSource('local');
+        const local = MathService.getRankedLeaderboard('all', 'practice');
+        setAllEntries(local);
       }
-      setLastSyncedTime(new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' }));
     } catch {
-      const local = MathService.getRankedLeaderboard(selectedClass, 'practice');
-      setEntries(local);
-      setSyncSource('local');
-    } finally {
-      if (showLoading) setIsSyncing(false);
+      const local = MathService.getRankedLeaderboard('all', 'practice');
+      setAllEntries(local);
     }
-  }, [selectedClass]);
+  }, [selectedTrack]);
 
   // Initial load and Real-time Firestore Cloud listener
   useEffect(() => {
     if (!isOpen) return;
 
-    loadLeaderboard(true);
+    loadLeaderboardData();
 
-    // Subscribe to real-time Firestore updates
     let unsubscribe: (() => void) | undefined;
     try {
-      unsubscribe = FirestoreLeaderboardService.subscribeToLeaderboard(selectedClass, (cloudEntries) => {
+      unsubscribe = FirestoreLeaderboardService.subscribeToLeaderboard('all', (cloudEntries) => {
         if (cloudEntries && cloudEntries.length > 0) {
-          setEntries(cloudEntries);
-          setSyncSource('cloud');
-          setLastSyncedTime(new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' }));
+          setAllEntries(cloudEntries);
         }
-      });
+      }, selectedTrack);
     } catch (e) {
       console.warn('Firestore subscription fallback:', e);
     }
 
-    // Polling backup interval every 5 seconds
     const interval = setInterval(() => {
-      loadLeaderboard(false);
+      loadLeaderboardData();
     }, 5000);
 
     return () => {
       if (unsubscribe) unsubscribe();
       clearInterval(interval);
     };
-  }, [isOpen, selectedClass, loadLeaderboard]);
+  }, [isOpen, selectedTrack, loadLeaderboardData]);
+
+  // Synchronously filter and rank entries based on selectedClass and selectedTrack
+  const filteredEntries = useMemo(() => {
+    return allEntries.filter((e) => {
+      if (!e) return false;
+      // Exclude mock test entries
+      if (e.mode === 'exam' || (e.chapterName && e.chapterName.toLowerCase().includes('mock'))) return false;
+      // Exclude legacy seed entries
+      if (e.id && e.id.startsWith('lead-seed-')) return false;
+
+      // Track / Subject Isolation
+      if (selectedTrack.includes('Physics')) {
+        if (!e.track || !e.track.includes('Physics')) return false;
+      } else {
+        if (e.track && e.track.includes('Physics')) return false;
+      }
+      if (e.track && e.track !== selectedTrack) return false;
+
+      // Class Isolation
+      if (selectedClass !== 'all') {
+        if (Number(e.classLevel) !== Number(selectedClass)) return false;
+      }
+
+      return true;
+    }).sort((a, b) => {
+      if (b.scorePercentage !== a.scorePercentage) {
+        return b.scorePercentage - a.scorePercentage;
+      }
+      if (b.correctCount !== a.correctCount) {
+        return b.correctCount - a.correctCount;
+      }
+      if (a.timeSpentSeconds !== b.timeSpentSeconds) {
+        return a.timeSpentSeconds - b.timeSpentSeconds;
+      }
+      return b.timestamp - a.timestamp;
+    });
+  }, [allEntries, selectedClass, selectedTrack]);
 
   if (!isOpen) return null;
 
-  const filteredEntries = entries.filter((e) => {
-    // Exclude any legacy sample seed IDs
-    if (e.id && e.id.startsWith('lead-seed-')) return false;
-    if (!searchQuery.trim()) return true;
-    const query = searchQuery.toLowerCase();
-    return (
-      e.studentName.toLowerCase().includes(query) ||
-      e.chapterName.toLowerCase().includes(query) ||
-      (e.section && e.section.toLowerCase().includes(query))
-    );
-  });
+  const calculateRating = (entry: LeaderboardEntry) => {
+    const accuracy = entry.scorePercentage || 0;
+    const correct = entry.correctCount || 0;
+    const ratingScore = Math.round((accuracy * 20) + (correct * 12));
+
+    if (ratingScore >= 2200) {
+      return { score: ratingScore, title: 'Grandmaster', stars: 5, color: 'text-amber-500 bg-amber-50 dark:bg-amber-950/60 border-amber-300 dark:border-amber-700' };
+    }
+    if (ratingScore >= 1800) {
+      return { score: ratingScore, title: 'Master', stars: 4, color: 'text-purple-600 bg-purple-50 dark:bg-purple-950/60 border-purple-300 dark:border-purple-700' };
+    }
+    if (ratingScore >= 1400) {
+      return { score: ratingScore, title: 'Expert', stars: 3, color: 'text-indigo-600 bg-indigo-50 dark:bg-indigo-950/60 border-indigo-300 dark:border-indigo-700' };
+    }
+    if (ratingScore >= 1000) {
+      return { score: ratingScore, title: 'Scholar', stars: 2, color: 'text-cyan-600 bg-cyan-50 dark:bg-cyan-950/60 border-cyan-300 dark:border-cyan-700' };
+    }
+    return { score: ratingScore, title: 'Apprentice', stars: 1, color: 'text-slate-600 bg-slate-50 dark:bg-slate-800 border-slate-300 dark:border-slate-700' };
+  };
+
+  const getRankBadge = (rank: number) => {
+    switch (rank) {
+      case 1:
+        return (
+          <div className="w-9 h-9 rounded-xl bg-amber-100 dark:bg-amber-950/80 text-amber-600 dark:text-amber-300 font-black text-sm flex items-center justify-center border border-amber-300 dark:border-amber-700 shadow-sm shrink-0">
+            🥇
+          </div>
+        );
+      case 2:
+        return (
+          <div className="w-9 h-9 rounded-xl bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 font-black text-sm flex items-center justify-center border border-slate-300 dark:border-slate-600 shadow-sm shrink-0">
+            🥈
+          </div>
+        );
+      case 3:
+        return (
+          <div className="w-9 h-9 rounded-xl bg-amber-50 dark:bg-amber-950/40 text-amber-700 dark:text-amber-400 font-black text-sm flex items-center justify-center border border-amber-300/60 dark:border-amber-800 shadow-sm shrink-0">
+            🥉
+          </div>
+        );
+      default:
+        return (
+          <div className="w-9 h-9 rounded-xl bg-slate-50 dark:bg-slate-800/60 text-slate-500 dark:text-slate-400 font-black text-xs flex items-center justify-center border border-slate-200 dark:border-slate-700 shrink-0">
+            #{rank}
+          </div>
+        );
+    }
+  };
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-slate-950/80 backdrop-blur-md animate-fade-in">
@@ -127,25 +191,16 @@ export const LeaderboardModal: React.FC<LeaderboardModalProps> = ({
                   Global Hall of Fame
                 </span>
                 <span className="text-[11px] text-white/80 font-medium hidden sm:inline">
-                  Live Synced Rankings ⚡
+                  Accuracy &amp; Skill Rating Engine ⚡
                 </span>
               </div>
-              <h2 className="text-xl sm:text-2xl font-black tracking-tight text-white flex items-center gap-2">
-                Mathematics Leaderboard
+              <h2 className="text-xl sm:text-2xl font-black tracking-tight text-white">
+                Academic Leaderboard &amp; Ratings
               </h2>
             </div>
           </div>
 
           <div className="flex items-center gap-2">
-            <button
-              onClick={() => loadLeaderboard(true)}
-              disabled={isSyncing}
-              className="p-2 rounded-full text-white/80 hover:text-white hover:bg-white/20 transition-colors cursor-pointer"
-              title="Refresh Live Leaderboard"
-              aria-label="Refresh Leaderboard"
-            >
-              <RefreshCw className={`w-5 h-5 ${isSyncing ? 'animate-spin' : ''}`} />
-            </button>
             <button
               onClick={onClose}
               className="p-2 rounded-full text-white/80 hover:text-white hover:bg-white/20 transition-colors cursor-pointer"
@@ -156,245 +211,166 @@ export const LeaderboardModal: React.FC<LeaderboardModalProps> = ({
           </div>
         </div>
 
-        {/* Controls Bar: Class Switcher & Search */}
+        {/* Controls Bar: Track Selector + Class Switcher */}
         <div className="p-4 sm:p-5 bg-slate-50 dark:bg-slate-950/60 border-b border-slate-200 dark:border-slate-800 space-y-3">
-          <div className="flex flex-col sm:flex-row items-center justify-between gap-3">
-            
-            {/* Class Switcher Tabs */}
-            <div className="flex flex-wrap items-center p-1 rounded-2xl bg-slate-200/80 dark:bg-slate-800/80 w-full sm:w-auto gap-1">
-              <button
-                onClick={() => setSelectedClass('all')}
-                className={`px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer ${
-                  selectedClass === 'all'
-                    ? 'bg-white dark:bg-slate-900 text-indigo-600 dark:text-indigo-400 shadow-xs'
-                    : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
-                }`}
-              >
-                All Classes
-              </button>
-              <button
-                onClick={() => setSelectedClass(9)}
-                className={`px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer ${
-                  selectedClass === 9
-                    ? 'bg-white dark:bg-slate-900 text-indigo-600 dark:text-indigo-400 shadow-xs'
-                    : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
-                }`}
-              >
-                Class 9
-              </button>
-              <button
-                onClick={() => setSelectedClass(10)}
-                className={`px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer ${
-                  selectedClass === 10
-                    ? 'bg-white dark:bg-slate-900 text-indigo-600 dark:text-indigo-400 shadow-xs'
-                    : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
-                }`}
-              >
-                Class 10
-              </button>
-              <button
-                onClick={() => setSelectedClass(11)}
-                className={`px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer ${
-                  selectedClass === 11
-                    ? 'bg-white dark:bg-slate-900 text-indigo-600 dark:text-indigo-400 shadow-xs'
-                    : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
-                }`}
-              >
-                Class 11
-              </button>
-              <button
-                onClick={() => setSelectedClass(12)}
-                className={`px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer ${
-                  selectedClass === 12
-                    ? 'bg-white dark:bg-slate-900 text-indigo-600 dark:text-indigo-400 shadow-xs'
-                    : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
-                }`}
-              >
-                Class 12
-              </button>
-            </div>
-
-            {/* Real-time Cloud Sync Badge */}
-            <div className="flex items-center gap-2 w-full sm:w-auto justify-between sm:justify-end">
-              <div className="flex items-center gap-1.5 text-xs px-3 py-1.5 rounded-xl bg-emerald-100/80 dark:bg-emerald-950/60 border border-emerald-300/60 dark:border-emerald-800 text-emerald-800 dark:text-emerald-300 font-bold">
-                <span className={`w-2 h-2 rounded-full ${isSyncing ? 'bg-amber-500 animate-ping' : 'bg-emerald-500 animate-pulse'}`} />
-                <span>
-                  {isSyncing 
-                    ? 'Syncing...' 
-                    : syncSource === 'cloud' 
-                    ? `Live Cloud Synced (${lastSyncedTime})` 
-                    : `Server Synced (${lastSyncedTime})`}
-                </span>
-              </div>
-            </div>
-
+          
+          {/* 4 Track Options */}
+          <div className="flex flex-wrap items-center gap-1.5 p-1 bg-slate-200/80 dark:bg-slate-800/80 rounded-2xl">
+            {([
+              { id: 'Elementary Mathematics', label: 'Elementary Mathematics', icon: Sigma },
+              { id: 'Advanced Mathematics', label: 'Advanced Mathematics', icon: Sparkles },
+              { id: 'Elementary Physics', label: 'Elementary Physics', icon: Atom },
+              { id: 'Advanced Physics', label: 'Advanced Physics', icon: Zap },
+            ] as { id: LeaderboardTrack; label: string; icon: any }[]).map((tr) => {
+              const Icon = tr.icon;
+              return (
+                <button
+                  key={tr.id}
+                  onClick={() => setSelectedTrack(tr.id)}
+                  className={`flex-1 min-w-[140px] px-3 py-2 rounded-xl text-xs font-bold transition-all flex items-center justify-center gap-1.5 cursor-pointer ${
+                    selectedTrack === tr.id
+                      ? 'bg-white dark:bg-slate-900 text-indigo-600 dark:text-indigo-400 shadow-xs'
+                      : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
+                  }`}
+                >
+                  <Icon className="w-3.5 h-3.5" />
+                  <span>{tr.label}</span>
+                </button>
+              );
+            })}
           </div>
 
-          {/* Search bar */}
-          <div className="relative">
-            <Search className="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
-            <input
-              type="text"
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              placeholder="Search candidate by name, section, or chapter..."
-              className="w-full pl-10 pr-4 py-2 text-xs rounded-xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 focus:outline-none focus:ring-2 focus:ring-indigo-500 text-slate-900 dark:text-white"
-            />
+          {/* Class Switcher Tabs (Click filters instantly) */}
+          <div className="flex flex-wrap items-center p-1 rounded-2xl bg-slate-200/80 dark:bg-slate-800/80 w-full gap-1">
+            <button
+              onClick={() => setSelectedClass('all')}
+              className={`px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer ${
+                selectedClass === 'all'
+                  ? 'bg-indigo-600 text-white shadow-xs'
+                  : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
+              }`}
+            >
+              All Classes ({allEntries.filter(e => e.track === selectedTrack).length})
+            </button>
+            {([9, 10, 11, 12] as ClassLevel[]).map((lvl) => {
+              const classCount = allEntries.filter(e => e.track === selectedTrack && Number(e.classLevel) === lvl).length;
+              return (
+                <button
+                  key={lvl}
+                  onClick={() => setSelectedClass(lvl)}
+                  className={`px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer flex items-center gap-1.5 ${
+                    selectedClass === lvl
+                      ? 'bg-indigo-600 text-white shadow-xs'
+                      : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
+                  }`}
+                >
+                  <span>Class {lvl}</span>
+                  <span className={`text-[10px] px-1.5 py-0.2 rounded-md ${selectedClass === lvl ? 'bg-indigo-700 text-white' : 'bg-slate-300 dark:bg-slate-700 text-slate-600 dark:text-slate-300'}`}>
+                    {classCount}
+                  </span>
+                </button>
+              );
+            })}
           </div>
+
         </div>
 
         {/* Leaderboard List Body */}
         <div className="flex-1 overflow-y-auto p-4 sm:p-6">
-          
           {filteredEntries.length === 0 ? (
             <div className="text-center py-16 space-y-3">
-              <div className="w-16 h-16 rounded-2xl bg-indigo-50 dark:bg-indigo-950/40 border border-indigo-200 dark:border-indigo-800/60 flex items-center justify-center mx-auto text-indigo-500">
-                <Trophy className="w-8 h-8 opacity-60" />
+              <div className="w-16 h-16 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-400 flex items-center justify-center mx-auto">
+                <Trophy className="w-8 h-8 stroke-[1.5]" />
               </div>
               <h3 className="text-base font-bold text-slate-800 dark:text-slate-200">
-                No Candidate Scores Recorded Yet
+                No Rankings for {selectedTrack} {selectedClass !== 'all' ? `(Class ${selectedClass})` : ''}
               </h3>
               <p className="text-xs text-slate-500 dark:text-slate-400 max-w-sm mx-auto">
-                Complete a practice quiz or exam to be the first candidate ranked on the live leaderboard!
+                {selectedTrack.includes('Physics')
+                  ? 'Physics chapter practice records will appear here as candidates complete practice sessions.'
+                  : 'Be the first candidate to complete an Elementary or Advanced Mathematics session and claim the top ranking!'}
               </p>
             </div>
           ) : (
-            <div className="space-y-2">
-              
-              {/* List Header */}
-              <div className="hidden sm:grid sm:grid-cols-12 gap-3 px-4 py-2 text-[11px] font-black uppercase tracking-wider text-slate-400 dark:text-slate-500 border-b border-slate-200 dark:border-slate-800">
-                <div className="col-span-1 text-center">Rank</div>
-                <div className="col-span-5">Candidate &amp; Chapter</div>
-                <div className="col-span-2 text-center">Score</div>
-                <div className="col-span-2 text-center">Time</div>
-                <div className="col-span-2 text-right">Mode / Date</div>
-              </div>
-
-              {/* Candidates List Items */}
+            <div className="space-y-3">
               {filteredEntries.map((entry, index) => {
-                const rank = index + 1;
-                const isFirst = rank === 1;
-                const isSecond = rank === 2;
-                const isThird = rank === 3;
-                
+                const rating = calculateRating(entry);
+                const wrongCount = Math.max(0, entry.totalQuestions - entry.correctCount);
+
                 return (
                   <div
-                    key={entry.id}
-                    className={`p-3.5 sm:px-4 sm:py-3 rounded-2xl border transition-all flex flex-col sm:grid sm:grid-cols-12 sm:items-center gap-2 sm:gap-3 ${
-                      isFirst
-                        ? 'bg-amber-50/90 dark:bg-amber-950/30 border-amber-300 dark:border-amber-600/50 shadow-xs ring-1 ring-amber-400/30'
-                        : isSecond
-                        ? 'bg-slate-100/90 dark:bg-slate-800/50 border-slate-300 dark:border-slate-700 shadow-xs'
-                        : isThird
-                        ? 'bg-orange-50/90 dark:bg-orange-950/30 border-orange-300 dark:border-orange-700/50 shadow-xs'
-                        : 'bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800/80 hover:border-indigo-300 dark:hover:border-indigo-700/60'
+                    key={entry.id || index}
+                    className={`p-4 sm:p-5 rounded-2xl border transition-all flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 ${
+                      index === 0
+                        ? 'bg-amber-50/50 dark:bg-amber-950/20 border-amber-300 dark:border-amber-800/80 shadow-xs'
+                        : 'bg-white dark:bg-slate-900/90 border-slate-200 dark:border-slate-800 hover:border-indigo-400'
                     }`}
                   >
-                    {/* Rank Badge */}
-                    <div className="col-span-1 flex items-center gap-2 sm:justify-center">
-                      <div className={`w-8 h-8 rounded-xl flex items-center justify-center font-black text-xs shrink-0 ${
-                        isFirst
-                          ? 'bg-gradient-to-br from-amber-400 to-amber-600 text-white shadow-md shadow-amber-500/20'
-                          : isSecond
-                          ? 'bg-gradient-to-br from-slate-400 to-slate-600 text-white shadow-xs'
-                          : isThird
-                          ? 'bg-gradient-to-br from-orange-400 to-orange-600 text-white shadow-xs'
-                          : 'bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 font-extrabold'
-                      }`}>
-                        {isFirst ? '🥇' : isSecond ? '🥈' : isThird ? '🥉' : `#${rank}`}
+                    <div className="flex items-center gap-3.5 min-w-0">
+                      {getRankBadge(index + 1)}
+
+                      <div className="min-w-0 space-y-1">
+                        <div className="flex flex-wrap items-center gap-2">
+                          <h4 className="text-sm font-bold text-slate-900 dark:text-white truncate">
+                            {entry.studentName}
+                          </h4>
+                          <span className="px-2 py-0.5 rounded-full text-[10px] font-black bg-indigo-50 dark:bg-indigo-950 text-indigo-700 dark:text-indigo-300 border border-indigo-200 dark:border-indigo-800 shrink-0">
+                            Class {entry.classLevel}
+                          </span>
+
+                          {/* Skill Rating Badge */}
+                          <span className={`px-2 py-0.5 rounded-md text-[10px] font-bold border flex items-center gap-1 ${rating.color}`}>
+                            <Award className="w-3 h-3" />
+                            <span>{rating.title} ({rating.score})</span>
+                          </span>
+                        </div>
+
+                        <div className="flex flex-wrap items-center gap-2 text-xs text-slate-500 dark:text-slate-400">
+                          <span className="truncate max-w-[180px] sm:max-w-xs">{entry.chapterName}</span>
+                          <span>•</span>
+                          <span className="flex items-center gap-1">
+                            <Clock className="w-3 h-3 text-slate-400" />
+                            {entry.formattedTime || `${entry.timeSpentSeconds}s`}
+                          </span>
+                          <span>•</span>
+                          <span>{entry.formattedDate || 'Recent'}</span>
+                        </div>
                       </div>
-                      <span className="sm:hidden text-xs font-bold text-slate-500">
-                        Rank #{rank}
-                      </span>
                     </div>
 
-                    {/* Candidate Name & Chapter Info */}
-                    <div className="col-span-5 min-w-0">
-                      <div className="flex items-center gap-2 flex-wrap">
-                        <span className="font-extrabold text-sm text-slate-900 dark:text-white truncate">
-                          {entry.studentName}
-                        </span>
-                        <span className="px-2 py-0.5 rounded-md text-[10px] font-black bg-indigo-100 dark:bg-indigo-950 text-indigo-700 dark:text-indigo-300 border border-indigo-200 dark:border-indigo-800">
-                          Class {entry.classLevel}
-                        </span>
-                        {entry.section && entry.section !== 'Standard' && (
-                          <span className="px-2 py-0.5 rounded-md text-[10px] font-bold bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400">
-                            {entry.section}
-                          </span>
+                    {/* Right Side: Profile Accuracy & Breakdown */}
+                    <div className="flex items-center gap-4 self-end sm:self-center shrink-0">
+                      
+                      {/* Correct vs Incorrect Breakdown visible to everyone */}
+                      <div className="flex items-center gap-2 text-xs font-semibold">
+                        <div className="flex items-center gap-1 text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-950/40 px-2 py-1 rounded-lg border border-emerald-200 dark:border-emerald-800/60">
+                          <CheckCircle2 className="w-3 h-3" />
+                          <span>{entry.correctCount} Correct</span>
+                        </div>
+                        {wrongCount > 0 && (
+                          <div className="flex items-center gap-1 text-rose-600 dark:text-rose-400 bg-rose-50 dark:bg-rose-950/40 px-2 py-1 rounded-lg border border-rose-200 dark:border-rose-800/60">
+                            <XCircle className="w-3 h-3" />
+                            <span>{wrongCount} Wrong</span>
+                          </div>
                         )}
                       </div>
-                      <p className="text-[11px] text-slate-500 dark:text-slate-400 truncate mt-0.5 font-medium">
-                        {entry.chapterName}
-                      </p>
-                    </div>
 
-                    {/* Score / Accuracy */}
-                    <div className="col-span-2 flex items-center justify-between sm:justify-center">
-                      <span className="sm:hidden text-xs text-slate-500 font-bold">Accuracy:</span>
-                      <div className="text-right sm:text-center">
-                        <div className={`text-sm font-black ${
-                          entry.scorePercentage >= 90
-                            ? 'text-emerald-600 dark:text-emerald-400'
-                            : entry.scorePercentage >= 70
-                            ? 'text-indigo-600 dark:text-indigo-400'
-                            : 'text-amber-600 dark:text-amber-400'
-                        }`}>
+                      {/* Accuracy Score */}
+                      <div className="text-right pl-2 border-l border-slate-200 dark:border-slate-800">
+                        <div className="text-base sm:text-lg font-black text-indigo-600 dark:text-indigo-400">
                           {entry.scorePercentage}%
                         </div>
-                        <div className="text-[10px] text-slate-400 font-bold">
-                          {entry.correctCount}/{entry.totalQuestions} Correct
+                        <div className="text-[10px] text-slate-400 font-semibold">
+                          Accuracy
                         </div>
                       </div>
-                    </div>
 
-                    {/* Completion Time */}
-                    <div className="col-span-2 flex items-center justify-between sm:justify-center">
-                      <span className="sm:hidden text-xs text-slate-500 font-bold">Time Taken:</span>
-                      <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-xl bg-amber-100/70 dark:bg-amber-950/50 border border-amber-200 dark:border-amber-800/60 text-amber-800 dark:text-amber-300 text-xs font-mono font-black" title="Time taken">
-                        <Zap className="w-3.5 h-3.5 fill-amber-500 text-amber-600" />
-                        <span>{entry.formattedTime}</span>
-                      </div>
                     </div>
-
-                    {/* Mode & Date Timestamp */}
-                    <div className="col-span-2 flex items-center justify-between sm:justify-end gap-2 text-right">
-                      <span className="sm:hidden text-xs text-slate-500 font-bold">Details:</span>
-                      <div className="flex flex-col sm:items-end">
-                        <span className={`px-2 py-0.5 rounded-md text-[10px] font-bold uppercase tracking-wider ${
-                          entry.mode === 'exam'
-                            ? 'bg-purple-100 dark:bg-purple-950 text-purple-700 dark:text-purple-300'
-                            : 'bg-emerald-100 dark:bg-emerald-950 text-emerald-700 dark:text-emerald-300'
-                        }`}>
-                          {entry.mode || 'practice'}
-                        </span>
-                        <span className="text-[10px] text-slate-400 dark:text-slate-500 mt-0.5">
-                          {entry.formattedDate || 'Recent'}
-                        </span>
-                      </div>
-                    </div>
-
                   </div>
                 );
               })}
-
             </div>
           )}
-
-        </div>
-
-        {/* Footer */}
-        <div className="p-4 bg-slate-50 dark:bg-slate-950 border-t border-slate-200 dark:border-slate-800 flex items-center justify-between text-xs text-slate-500">
-          <div className="flex items-center gap-2">
-            <Sparkles className="w-4 h-4 text-amber-500" />
-            <span className="hidden sm:inline">Ranked by highest accuracy percentage, then fastest completion speed.</span>
-            <span className="sm:hidden">Ranked by accuracy &amp; speed.</span>
-          </div>
-          <button
-            onClick={onClose}
-            className="px-4 py-1.5 rounded-xl bg-slate-200 dark:bg-slate-800 hover:bg-slate-300 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 font-bold transition-colors cursor-pointer"
-          >
-            Close
-          </button>
         </div>
 
       </div>

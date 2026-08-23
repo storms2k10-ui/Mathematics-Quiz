@@ -1,33 +1,75 @@
 import React, { useState, useMemo } from 'react';
-import { Sigma, Menu, X, BookOpen, Trophy, CheckCircle2, Info, ChevronDown, Sparkles, Library, Sun, Moon, Compass, Layers, Calculator, GraduationCap } from 'lucide-react';
+import { 
+  Sigma, 
+  Menu, 
+  X, 
+  BookOpen, 
+  Trophy, 
+  Info, 
+  ChevronDown, 
+  ChevronRight,
+  Library, 
+  Sun, 
+  Moon, 
+  Compass, 
+  Layers, 
+  Calculator, 
+  Atom, 
+  Brain,
+  User,
+  LogIn,
+  GraduationCap,
+  Sparkles
+} from 'lucide-react';
 import { ClassLevel } from '../types';
 import { useTheme } from '../context/ThemeContext';
-import { ContentSection } from './ContentView';
+import { useAuth } from '../context/AuthContext';
+import { ContentSection, ContentSubject } from './ContentView';
 import { ALL_CHAPTERS } from '../data/chaptersData';
 
+export type NavTab = 'home' | 'philosophy' | 'classes' | 'dictionary' | 'about' | 'physics';
+
 interface NavbarProps {
-  activeTab: 'home' | 'classes' | 'dictionary' | 'about';
+  activeTab: NavTab;
   selectedClass: ClassLevel | null;
   activeContentSection?: ContentSection;
-  onNavigate: (tab: 'home' | 'classes' | 'dictionary' | 'about', classLevel?: ClassLevel) => void;
-  onNavigateContentSection?: (section: ContentSection) => void;
-  onQuickPractice: (classLevel?: ClassLevel) => void;
+  activePhilosopherType?: 'mathematicians' | 'physicists';
+  onNavigate: (tab: NavTab, classLevel?: ClassLevel) => void;
+  onNavigateContentSection?: (section: ContentSection, subject?: ContentSubject) => void;
+  onSelectPhilosopherType?: (type: 'mathematicians' | 'physicists') => void;
   onOpenLeaderboard?: () => void;
+  onOpenAuth?: () => void;
+  onOpenProfile?: () => void;
 }
 
 export const Navbar: React.FC<NavbarProps> = ({
   activeTab,
   selectedClass,
   activeContentSection = 'definitions',
+  activePhilosopherType = 'mathematicians',
   onNavigate,
   onNavigateContentSection,
-  onQuickPractice,
+  onSelectPhilosopherType,
   onOpenLeaderboard,
+  onOpenAuth,
+  onOpenProfile,
 }) => {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-  const [classesDropdownOpen, setClassesDropdownOpen] = useState(false);
+  const [philosophyDropdownOpen, setPhilosophyDropdownOpen] = useState(false);
+  const [subjectDropdownOpen, setSubjectDropdownOpen] = useState(false);
   const [contentDropdownOpen, setContentDropdownOpen] = useState(false);
+
+  // Strictly default to false - NEVER expand any section until clicked
+  const [isMathExpandedInSubject, setIsMathExpandedInSubject] = useState(false);
+  const [isAdvMathExpandedInSubject, setIsAdvMathExpandedInSubject] = useState(false);
+  const [isPhysicsExpandedInSubject, setIsPhysicsExpandedInSubject] = useState(false);
+  const [isAdvPhysicsExpandedInSubject, setIsAdvPhysicsExpandedInSubject] = useState(false);
+
+  const [isMathExpandedInContent, setIsMathExpandedInContent] = useState(false);
+  const [isPhysicsExpandedInContent, setIsPhysicsExpandedInContent] = useState(false);
+
   const { isDarkMode, toggleTheme } = useTheme();
+  const { currentUser, userProfile } = useAuth();
 
   // Dynamic Chapter Auto-Counting per Class
   const chapterCounts = useMemo(() => {
@@ -41,14 +83,30 @@ export const Navbar: React.FC<NavbarProps> = ({
 
   const handleClassSelect = (lvl: ClassLevel) => {
     onNavigate('classes', lvl);
-    setClassesDropdownOpen(false);
+    setSubjectDropdownOpen(false);
     setContentDropdownOpen(false);
     setMobileMenuOpen(false);
   };
 
-  const handleContentSectionSelect = (section: ContentSection) => {
+  const handleSubjectSelect = (subject: 'physics') => {
+    onNavigate(subject);
+    setSubjectDropdownOpen(false);
+    setContentDropdownOpen(false);
+    setMobileMenuOpen(false);
+  };
+
+  const handlePhilosophySelect = (type: 'mathematicians' | 'physicists') => {
+    if (onSelectPhilosopherType) {
+      onSelectPhilosopherType(type);
+    }
+    onNavigate('philosophy');
+    setPhilosophyDropdownOpen(false);
+    setMobileMenuOpen(false);
+  };
+
+  const handleContentSectionSelect = (section: ContentSection, subject: ContentSubject = 'mathematics') => {
     if (onNavigateContentSection) {
-      onNavigateContentSection(section);
+      onNavigateContentSection(section, subject);
     } else {
       onNavigate('dictionary');
     }
@@ -61,7 +119,7 @@ export const Navbar: React.FC<NavbarProps> = ({
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex items-center justify-between h-16 sm:h-18">
           
-          {/* Brand Logo: Clean Sigma Icon Brandmark */}
+          {/* Brand Logo */}
           <button
             id="nav-logo-btn"
             onClick={() => onNavigate('home')}
@@ -76,147 +134,290 @@ export const Navbar: React.FC<NavbarProps> = ({
 
           {/* Desktop Navigation Links */}
           <div className="hidden md:flex items-center gap-1.5 lg:gap-2">
-            <button
-              id="nav-link-home"
-              onClick={() => onNavigate('home')}
-              className={`px-3.5 py-2 rounded-xl text-sm font-semibold transition-all cursor-pointer ${
-                activeTab === 'home'
-                  ? 'text-indigo-600 dark:text-indigo-400 bg-indigo-50 dark:bg-indigo-950/60 shadow-xs'
-                  : 'text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-800'
-              }`}
-            >
-              Home
-            </button>
-
-            {/* Select Class Dropdown (9, 10, 11, 12) with Auto-counted Chapters & Hover Auto-show */}
+            
+            {/* 🌟 PHILOSOPHY BUTTON DROPDOWN (Mathematicians & Physicists) */}
             <div 
               className="relative"
-              onMouseEnter={() => setClassesDropdownOpen(true)}
-              onMouseLeave={() => setClassesDropdownOpen(false)}
+              onMouseEnter={() => setPhilosophyDropdownOpen(true)}
+              onMouseLeave={() => setPhilosophyDropdownOpen(false)}
             >
               <button
-                id="nav-link-classes-dropdown"
-                onClick={() => setClassesDropdownOpen(!classesDropdownOpen)}
+                id="nav-link-philosophy"
+                onClick={() => setPhilosophyDropdownOpen(!philosophyDropdownOpen)}
                 className={`px-3.5 py-2 rounded-xl text-sm font-semibold transition-all flex items-center gap-1.5 cursor-pointer ${
-                  activeTab === 'classes'
+                  activeTab === 'philosophy'
+                    ? 'text-indigo-600 dark:text-indigo-400 bg-indigo-50 dark:bg-indigo-950/60 shadow-xs'
+                    : 'text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-800'
+                }`}
+                aria-expanded={philosophyDropdownOpen}
+              >
+                <Brain className="w-4 h-4 text-indigo-500" />
+                <span>Philosophy</span>
+                <ChevronDown className={`w-3.5 h-3.5 opacity-70 transition-transform ${philosophyDropdownOpen ? 'rotate-180' : ''}`} />
+              </button>
+
+              {philosophyDropdownOpen && (
+                <div className="absolute left-0 mt-1 w-64 bg-white dark:bg-slate-900 rounded-2xl shadow-2xl border border-slate-200 dark:border-slate-800 py-2 z-50 animate-in fade-in slide-in-from-top-2 duration-150">
+                  <div className="px-4 py-1.5 text-[10px] font-bold text-slate-400 uppercase tracking-wider border-b border-slate-100 dark:border-slate-800">
+                    Philosophical Foundations
+                  </div>
+
+                  <div className="p-2 space-y-1">
+                    {/* Option 1: Mathematicians */}
+                    <button
+                      onClick={() => handlePhilosophySelect('mathematicians')}
+                      className={`w-full text-left px-3 py-2.5 rounded-xl text-xs sm:text-sm flex items-center gap-2.5 hover:bg-indigo-50 dark:hover:bg-slate-800 transition-colors cursor-pointer ${
+                        activeTab === 'philosophy' && activePhilosopherType === 'mathematicians'
+                          ? 'bg-indigo-50/90 dark:bg-slate-800 text-indigo-600 dark:text-indigo-400 font-bold'
+                          : 'text-slate-700 dark:text-slate-200'
+                      }`}
+                    >
+                      <span className="w-7 h-7 rounded-lg bg-indigo-100 dark:bg-indigo-950 text-indigo-700 dark:text-indigo-300 flex items-center justify-center text-xs font-bold shrink-0">
+                        <Sigma className="w-4 h-4" />
+                      </span>
+                      <div>
+                        <span className="font-bold block">Mathematicians</span>
+                        <span className="text-[10px] text-slate-400">Gauss, Euler, Ramanujan, Gödel...</span>
+                      </div>
+                    </button>
+
+                    {/* Option 2: Physicists */}
+                    <button
+                      onClick={() => handlePhilosophySelect('physicists')}
+                      className={`w-full text-left px-3 py-2.5 rounded-xl text-xs sm:text-sm flex items-center gap-2.5 hover:bg-cyan-50 dark:hover:bg-slate-800 transition-colors cursor-pointer ${
+                        activeTab === 'philosophy' && activePhilosopherType === 'physicists'
+                          ? 'bg-cyan-50/90 dark:bg-slate-800 text-cyan-600 dark:text-cyan-400 font-bold'
+                          : 'text-slate-700 dark:text-slate-200'
+                      }`}
+                    >
+                      <span className="w-7 h-7 rounded-lg bg-cyan-100 dark:bg-cyan-950 text-cyan-700 dark:text-cyan-300 flex items-center justify-center text-xs font-bold shrink-0">
+                        <Atom className="w-4 h-4" />
+                      </span>
+                      <div>
+                        <span className="font-bold block">Physicists</span>
+                        <span className="text-[10px] text-slate-400">Einstein, Newton, Feynman, Bohr...</span>
+                      </div>
+                    </button>
+                  </div>
+                </div>
+              )}
+            </div>
+
+            {/* 🌟 SUBJECT DROPDOWN (Renamed from Select Subject to Subject) */}
+            <div 
+              className="relative"
+              onMouseEnter={() => setSubjectDropdownOpen(true)}
+              onMouseLeave={() => setSubjectDropdownOpen(false)}
+            >
+              <button
+                id="nav-link-subject-dropdown"
+                onClick={() => setSubjectDropdownOpen(!subjectDropdownOpen)}
+                className={`px-3.5 py-2 rounded-xl text-sm font-semibold transition-all flex items-center gap-1.5 cursor-pointer ${
+                  activeTab === 'classes' || activeTab === 'physics'
                     ? 'text-indigo-600 dark:text-indigo-400 bg-indigo-50 dark:bg-indigo-950/60 shadow-xs'
                     : 'text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-800'
                 }`}
               >
                 <BookOpen className="w-4 h-4" />
-                <span>Select Class</span>
-                <ChevronDown className="w-3.5 h-3.5 opacity-70" />
+                <span>Subject</span>
+                <ChevronDown className={`w-3.5 h-3.5 opacity-70 transition-transform ${subjectDropdownOpen ? 'rotate-180' : ''}`} />
               </button>
 
-              {classesDropdownOpen && (
+              {subjectDropdownOpen && (
                 <div
-                  className="absolute left-0 mt-1 w-80 sm:w-96 bg-white dark:bg-slate-900 rounded-2xl shadow-2xl border border-slate-200 dark:border-slate-800 py-2 z-50 animate-in fade-in slide-in-from-top-2 duration-150 max-h-[85vh] overflow-y-auto"
+                  className="absolute left-0 mt-1 w-84 bg-white dark:bg-slate-900 rounded-2xl shadow-2xl border border-slate-200 dark:border-slate-800 py-2 z-50 animate-in fade-in slide-in-from-top-2 duration-150 max-h-[85vh] overflow-y-auto"
                 >
                   <div className="px-4 py-1.5 text-[10px] font-bold text-slate-400 uppercase tracking-wider border-b border-slate-100 dark:border-slate-800 flex items-center justify-between">
-                    <span>Select Class &amp; Curriculum</span>
-                    <span>Classes 9 to 12</span>
+                    <span>Academic Tracks</span>
+                    <span>Mathematics &amp; Physics</span>
                   </div>
                   
-                  {/* Class 9 */}
-                  <button
-                    id="nav-class-option-9"
-                    onClick={() => handleClassSelect(9)}
-                    className={`w-full text-left px-4 py-2.5 text-xs sm:text-sm flex items-center justify-between hover:bg-indigo-50 dark:hover:bg-slate-800 transition-colors cursor-pointer ${
-                      activeTab === 'classes' && selectedClass === 9
-                        ? 'text-indigo-600 dark:text-indigo-400 font-bold bg-indigo-50/80 dark:bg-slate-800/80'
-                        : 'text-slate-700 dark:text-slate-200'
-                    }`}
-                  >
-                    <span className="flex items-center gap-2.5">
-                      <span className="w-7 h-7 rounded-lg bg-blue-100 dark:bg-blue-950 text-blue-700 dark:text-blue-300 flex items-center justify-center text-xs font-bold">
-                        9
-                      </span>
-                      <div>
-                        <span className="font-bold block">Class 9 Mathematics</span>
-                        <span className="text-[11px] text-slate-400 font-normal">Real numbers, Logarithms, Algebra &amp; Geometry</span>
-                      </div>
-                    </span>
-                    <span className="text-[10px] px-2 py-0.5 rounded-full bg-blue-50 text-blue-700 dark:bg-blue-950/80 dark:text-blue-300 font-bold shrink-0 ml-2">
-                      {chapterCounts[9]} Chapters
-                    </span>
-                  </button>
+                  <div className="p-2 space-y-1.5">
+                    {/* 1. ELEMENTARY MATHEMATICS (Click to expand 4 classes) */}
+                    <div>
+                      <button
+                        type="button"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setIsMathExpandedInSubject(!isMathExpandedInSubject);
+                        }}
+                        className="w-full text-left px-3 py-2.5 rounded-xl text-xs sm:text-sm flex items-center justify-between hover:bg-indigo-50 dark:hover:bg-slate-800 transition-colors cursor-pointer text-slate-800 dark:text-slate-100"
+                      >
+                        <span className="flex items-center gap-2 font-bold text-indigo-700 dark:text-indigo-300">
+                          <span className="w-7 h-7 rounded-lg bg-indigo-100 dark:bg-indigo-950 text-indigo-700 dark:text-indigo-300 flex items-center justify-center text-xs font-bold shrink-0">
+                            <Sigma className="w-4 h-4" />
+                          </span>
+                          <span>Elementary Mathematics</span>
+                        </span>
+                        <div className="flex items-center gap-1.5 text-xs text-slate-400">
+                          <span className="text-[10px] font-bold">4 Classes</span>
+                          <ChevronDown className={`w-3.5 h-3.5 transition-transform ${isMathExpandedInSubject ? 'rotate-180' : ''}`} />
+                        </div>
+                      </button>
 
-                  {/* Class 10 */}
-                  <button
-                    id="nav-class-option-10"
-                    onClick={() => handleClassSelect(10)}
-                    className={`w-full text-left px-4 py-2.5 text-xs sm:text-sm flex items-center justify-between hover:bg-emerald-50/70 dark:hover:bg-slate-800 transition-colors cursor-pointer ${
-                      activeTab === 'classes' && selectedClass === 10
-                        ? 'text-emerald-700 dark:text-emerald-400 font-bold bg-emerald-50 dark:bg-slate-800'
-                        : 'text-slate-700 dark:text-slate-200'
-                    }`}
-                  >
-                    <span className="flex items-center gap-2.5">
-                      <span className="w-7 h-7 rounded-lg bg-emerald-100 dark:bg-emerald-950 text-emerald-700 dark:text-emerald-300 flex items-center justify-center text-xs font-bold">
-                        10
-                      </span>
-                      <div>
-                        <span className="font-bold block">Class 10 Mathematics</span>
-                        <span className="text-[11px] text-slate-400 font-normal">Sets, Quadratic Equations, Geometry &amp; Trig</span>
-                      </div>
-                    </span>
-                    <span className="text-[10px] px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-700 dark:bg-emerald-950/80 dark:text-emerald-300 font-bold shrink-0 ml-2">
-                      {chapterCounts[10]} Chapters
-                    </span>
-                  </button>
+                      {isMathExpandedInSubject && (
+                        <div className="pl-4 pr-1 py-1 space-y-1 border-l-2 border-indigo-200 dark:border-indigo-800 ml-4 animate-in fade-in duration-150">
+                          {([9, 10, 11, 12] as ClassLevel[]).map((lvl) => (
+                            <button
+                              key={lvl}
+                              onClick={() => handleClassSelect(lvl)}
+                              className={`w-full text-left px-2.5 py-1.5 rounded-lg text-xs flex items-center justify-between hover:bg-indigo-50 dark:hover:bg-slate-800 transition-colors cursor-pointer ${
+                                activeTab === 'classes' && selectedClass === lvl
+                                  ? 'text-indigo-600 dark:text-indigo-400 font-bold bg-indigo-50/80 dark:bg-slate-800/80'
+                                  : 'text-slate-700 dark:text-slate-300'
+                              }`}
+                            >
+                              <span className="font-semibold">Class {lvl} Mathematics</span>
+                              <span className="text-[10px] px-1.5 py-0.5 rounded-md bg-slate-100 dark:bg-slate-800 text-slate-500 font-semibold">
+                                {chapterCounts[lvl]} Ch
+                              </span>
+                            </button>
+                          ))}
+                        </div>
+                      )}
+                    </div>
 
-                  {/* Class 11 */}
-                  <button
-                    id="nav-class-option-11"
-                    onClick={() => handleClassSelect(11)}
-                    className={`w-full text-left px-4 py-2.5 text-xs sm:text-sm flex items-center justify-between hover:bg-indigo-50 dark:hover:bg-slate-800 transition-colors cursor-pointer ${
-                      activeTab === 'classes' && selectedClass === 11
-                        ? 'text-indigo-600 dark:text-indigo-400 font-bold bg-indigo-50/80 dark:bg-slate-800/80'
-                        : 'text-slate-700 dark:text-slate-200'
-                    }`}
-                  >
-                    <span className="flex items-center gap-2.5">
-                      <span className="w-7 h-7 rounded-lg bg-indigo-100 dark:bg-indigo-950 text-indigo-700 dark:text-indigo-300 flex items-center justify-center text-xs font-bold">
-                        11
-                      </span>
-                      <div>
-                        <span className="font-bold block">Class 11 Mathematics</span>
-                        <span className="text-[11px] text-slate-400 font-normal">Complex Numbers, Vectors, Series, Trig.</span>
-                      </div>
-                    </span>
-                    <span className="text-[10px] px-2 py-0.5 rounded-full bg-indigo-50 text-indigo-700 dark:bg-indigo-950/80 dark:text-indigo-300 font-bold shrink-0 ml-2">
-                      {chapterCounts[11]} Chapters
-                    </span>
-                  </button>
+                    {/* 2. ADVANCED MATHEMATICS (Click to expand Class 11 & Class 12) */}
+                    <div>
+                      <button
+                        type="button"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setIsAdvMathExpandedInSubject(!isAdvMathExpandedInSubject);
+                        }}
+                        className="w-full text-left px-3 py-2.5 rounded-xl text-xs sm:text-sm flex items-center justify-between hover:bg-purple-50 dark:hover:bg-slate-800 transition-colors cursor-pointer text-slate-800 dark:text-slate-100"
+                      >
+                        <span className="flex items-center gap-2 font-bold text-purple-700 dark:text-purple-300">
+                          <span className="w-7 h-7 rounded-lg bg-purple-100 dark:bg-purple-950 text-purple-700 dark:text-purple-300 flex items-center justify-center text-xs font-bold shrink-0">
+                            <Sparkles className="w-4 h-4" />
+                          </span>
+                          <span>Advanced Mathematics</span>
+                        </span>
+                        <div className="flex items-center gap-1.5 text-xs text-slate-400">
+                          <span className="text-[10px] font-bold">2 Classes</span>
+                          <ChevronDown className={`w-3.5 h-3.5 transition-transform ${isAdvMathExpandedInSubject ? 'rotate-180' : ''}`} />
+                        </div>
+                      </button>
 
-                  {/* Class 12 */}
-                  <button
-                    id="nav-class-option-12"
-                    onClick={() => handleClassSelect(12)}
-                    className={`w-full text-left px-4 py-2.5 text-xs sm:text-sm flex items-center justify-between hover:bg-purple-50 dark:hover:bg-slate-800 transition-colors cursor-pointer ${
-                      activeTab === 'classes' && selectedClass === 12
-                        ? 'text-purple-600 dark:text-purple-400 font-bold bg-purple-50/80 dark:bg-slate-800/80'
-                        : 'text-slate-700 dark:text-slate-200'
-                    }`}
-                  >
-                    <span className="flex items-center gap-2.5">
-                      <span className="w-7 h-7 rounded-lg bg-purple-100 dark:bg-purple-950 text-purple-700 dark:text-purple-300 flex items-center justify-center text-xs font-bold">
-                        12
-                      </span>
-                      <div>
-                        <span className="font-bold block">Class 12 Mathematics</span>
-                        <span className="text-[11px] text-slate-400 font-normal">Calculus, Limits, Integration &amp; Analytic Geometry</span>
-                      </div>
-                    </span>
-                    <span className="text-[10px] px-2 py-0.5 rounded-full bg-purple-50 text-purple-700 dark:bg-purple-950/80 dark:text-purple-300 font-bold shrink-0 ml-2">
-                      {chapterCounts[12]} Chapters
-                    </span>
-                  </button>
+                      {isAdvMathExpandedInSubject && (
+                        <div className="pl-4 pr-1 py-1 space-y-1 border-l-2 border-purple-200 dark:border-purple-800 ml-4 animate-in fade-in duration-150">
+                          <button
+                            onClick={() => handleClassSelect(11)}
+                            className="w-full text-left px-2.5 py-1.5 rounded-lg text-xs flex items-center justify-between hover:bg-purple-50 dark:hover:bg-slate-800 transition-colors cursor-pointer text-slate-700 dark:text-slate-300"
+                          >
+                            <span className="font-semibold">Class 11 Advanced Mathematics</span>
+                            <span className="text-[9px] px-1.5 py-0.5 rounded-md bg-purple-100 dark:bg-purple-950 text-purple-700 dark:text-purple-300 font-bold">
+                              Advanced
+                            </span>
+                          </button>
+                          <button
+                            onClick={() => handleClassSelect(12)}
+                            className="w-full text-left px-2.5 py-1.5 rounded-lg text-xs flex items-center justify-between hover:bg-purple-50 dark:hover:bg-slate-800 transition-colors cursor-pointer text-slate-700 dark:text-slate-300"
+                          >
+                            <span className="font-semibold">Class 12 Advanced Mathematics</span>
+                            <span className="text-[9px] px-1.5 py-0.5 rounded-md bg-purple-100 dark:bg-purple-950 text-purple-700 dark:text-purple-300 font-bold">
+                              Advanced
+                            </span>
+                          </button>
+                        </div>
+                      )}
+                    </div>
+
+                    <div className="border-t border-slate-100 dark:border-slate-800 my-1"></div>
+
+                    {/* 3. ELEMENTARY PHYSICS (Click to expand 4 classes) */}
+                    <div>
+                      <button
+                        type="button"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setIsPhysicsExpandedInSubject(!isPhysicsExpandedInSubject);
+                        }}
+                        className="w-full text-left px-3 py-2.5 rounded-xl text-xs sm:text-sm flex items-center justify-between hover:bg-cyan-50 dark:hover:bg-slate-800 transition-colors cursor-pointer text-slate-800 dark:text-slate-100"
+                      >
+                        <span className="flex items-center gap-2 font-bold text-cyan-700 dark:text-cyan-300">
+                          <span className="w-7 h-7 rounded-lg bg-cyan-100 dark:bg-cyan-950 text-cyan-700 dark:text-cyan-300 flex items-center justify-center text-xs font-bold shrink-0">
+                            <Atom className="w-4 h-4" />
+                          </span>
+                          <span>Elementary Physics</span>
+                        </span>
+                        <div className="flex items-center gap-1.5 text-xs text-slate-400">
+                          <span className="text-[10px] font-bold">4 Classes</span>
+                          <ChevronDown className={`w-3.5 h-3.5 transition-transform ${isPhysicsExpandedInSubject ? 'rotate-180' : ''}`} />
+                        </div>
+                      </button>
+
+                      {isPhysicsExpandedInSubject && (
+                        <div className="pl-4 pr-1 py-1 space-y-1 border-l-2 border-cyan-200 dark:border-cyan-800 ml-4 animate-in fade-in duration-150">
+                          {([9, 10, 11, 12] as ClassLevel[]).map((lvl) => (
+                            <button
+                              key={lvl}
+                              onClick={() => handleSubjectSelect('physics')}
+                              className="w-full text-left px-2.5 py-1.5 rounded-lg text-xs flex items-center justify-between hover:bg-cyan-50 dark:hover:bg-slate-800 transition-colors cursor-pointer text-slate-700 dark:text-slate-300"
+                            >
+                              <span className="font-semibold">Class {lvl} Physics</span>
+                              <span className="text-[9px] px-1.5 py-0.5 rounded-md bg-cyan-50 dark:bg-cyan-950/80 text-cyan-700 dark:text-cyan-300 font-bold">
+                                Physics
+                              </span>
+                            </button>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+
+                    {/* 4. ADVANCED PHYSICS (Click to expand Class 11 & 12) */}
+                    <div>
+                      <button
+                        type="button"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setIsAdvPhysicsExpandedInSubject(!isAdvPhysicsExpandedInSubject);
+                        }}
+                        className="w-full text-left px-3 py-2.5 rounded-xl text-xs sm:text-sm flex items-center justify-between hover:bg-blue-50 dark:hover:bg-slate-800 transition-colors cursor-pointer text-slate-800 dark:text-slate-100"
+                      >
+                        <span className="flex items-center gap-2 font-bold text-blue-700 dark:text-blue-300">
+                          <span className="w-7 h-7 rounded-lg bg-blue-100 dark:bg-blue-950 text-blue-700 dark:text-blue-300 flex items-center justify-center text-xs font-bold shrink-0">
+                            <Zap className="w-4 h-4" />
+                          </span>
+                          <span>Advanced Physics</span>
+                        </span>
+                        <div className="flex items-center gap-1.5 text-xs text-slate-400">
+                          <span className="text-[10px] font-bold">2 Classes</span>
+                          <ChevronDown className={`w-3.5 h-3.5 transition-transform ${isAdvPhysicsExpandedInSubject ? 'rotate-180' : ''}`} />
+                        </div>
+                      </button>
+
+                      {isAdvPhysicsExpandedInSubject && (
+                        <div className="pl-4 pr-1 py-1 space-y-1 border-l-2 border-blue-200 dark:border-blue-800 ml-4 animate-in fade-in duration-150">
+                          <button
+                            onClick={() => handleSubjectSelect('physics')}
+                            className="w-full text-left px-2.5 py-1.5 rounded-lg text-xs flex items-center justify-between hover:bg-blue-50 dark:hover:bg-slate-800 transition-colors cursor-pointer text-slate-700 dark:text-slate-300"
+                          >
+                            <span className="font-semibold">Class 11 Advanced Physics</span>
+                            <span className="text-[9px] px-1.5 py-0.5 rounded-md bg-blue-100 dark:bg-blue-950 text-blue-700 dark:text-blue-300 font-bold">
+                              Advanced
+                            </span>
+                          </button>
+                          <button
+                            onClick={() => handleSubjectSelect('physics')}
+                            className="w-full text-left px-2.5 py-1.5 rounded-lg text-xs flex items-center justify-between hover:bg-blue-50 dark:hover:bg-slate-800 transition-colors cursor-pointer text-slate-700 dark:text-slate-300"
+                          >
+                            <span className="font-semibold">Class 12 Advanced Physics</span>
+                            <span className="text-[9px] px-1.5 py-0.5 rounded-md bg-blue-100 dark:bg-blue-950 text-blue-700 dark:text-blue-300 font-bold">
+                              Advanced
+                            </span>
+                          </button>
+                        </div>
+                      )}
+                    </div>
+
+                  </div>
+
                 </div>
               )}
             </div>
 
-            {/* Content Dropdown Menu with hover auto-show & click */}
+            {/* Content Dropdown Menu (Click to expand Mathematics / Physics) */}
             <div 
               className="relative"
               onMouseEnter={() => setContentDropdownOpen(true)}
@@ -240,81 +441,164 @@ export const Navbar: React.FC<NavbarProps> = ({
               {contentDropdownOpen && (
                 <div 
                   id="nav-content-dropdown-menu"
-                  className="absolute left-0 mt-1 w-64 bg-white dark:bg-slate-900 rounded-2xl shadow-xl border border-slate-200 dark:border-slate-800 py-2 z-50 animate-in fade-in slide-in-from-top-2 duration-150 space-y-1"
+                  className="absolute left-0 mt-1 w-80 bg-white dark:bg-slate-900 rounded-2xl shadow-xl border border-slate-200 dark:border-slate-800 py-2 z-50 animate-in fade-in slide-in-from-top-2 duration-150 space-y-1.5 p-2"
                 >
-                  <div className="px-3 py-1 text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider">
-                    Mathematics Content Sections
+                  {/* MATHEMATICS SECTION (Click to expand) */}
+                  <div>
+                    <button
+                      type="button"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setIsMathExpandedInContent(!isMathExpandedInContent);
+                      }}
+                      className="w-full text-left px-3 py-2.5 rounded-xl text-xs sm:text-sm flex items-center justify-between hover:bg-indigo-50 dark:hover:bg-slate-800 transition-colors cursor-pointer text-slate-800 dark:text-slate-100"
+                    >
+                      <span className="flex items-center gap-2 font-bold text-indigo-700 dark:text-indigo-300">
+                        <span className="w-7 h-7 rounded-lg bg-indigo-100 dark:bg-indigo-950 text-indigo-700 dark:text-indigo-300 flex items-center justify-center text-xs font-bold shrink-0">
+                          <Sigma className="w-4 h-4" />
+                        </span>
+                        <span>Mathematics</span>
+                      </span>
+                      <div className="flex items-center gap-1 text-xs text-slate-400">
+                        <span className="text-[10px] font-bold">4 Sections</span>
+                        <ChevronDown className={`w-3.5 h-3.5 transition-transform ${isMathExpandedInContent ? 'rotate-180' : ''}`} />
+                      </div>
+                    </button>
+
+                    {isMathExpandedInContent && (
+                      <div className="pl-4 pr-1 py-1 space-y-1 border-l-2 border-indigo-200 dark:border-indigo-800 ml-4 animate-in fade-in duration-150">
+                        <button
+                          onClick={() => handleContentSectionSelect('definitions', 'mathematics')}
+                          className="w-full text-left px-2.5 py-1.5 rounded-lg text-xs flex items-center gap-2 hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors cursor-pointer text-slate-700 dark:text-slate-200"
+                        >
+                          <span className="w-5 h-5 rounded-md bg-emerald-100 dark:bg-emerald-950 text-emerald-700 dark:text-emerald-300 flex items-center justify-center text-xs">
+                            <BookOpen className="w-3 h-3" />
+                          </span>
+                          <div>
+                            <span className="font-bold block">Definitions</span>
+                            <span className="text-[9px] text-slate-400">A–Z Terms &amp; Concepts</span>
+                          </div>
+                        </button>
+
+                        <button
+                          onClick={() => handleContentSectionSelect('theorems', 'mathematics')}
+                          className="w-full text-left px-2.5 py-1.5 rounded-lg text-xs flex items-center gap-2 hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors cursor-pointer text-slate-700 dark:text-slate-200"
+                        >
+                          <span className="w-5 h-5 rounded-md bg-indigo-100 dark:bg-indigo-950 text-indigo-700 dark:text-indigo-300 flex items-center justify-center text-xs">
+                            <Compass className="w-3 h-3" />
+                          </span>
+                          <div>
+                            <span className="font-bold block">Theorems</span>
+                            <span className="text-[9px] text-slate-400">Formal Proofs &amp; Statements</span>
+                          </div>
+                        </button>
+
+                        <button
+                          onClick={() => handleContentSectionSelect('properties', 'mathematics')}
+                          className="w-full text-left px-2.5 py-1.5 rounded-lg text-xs flex items-center gap-2 hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors cursor-pointer text-slate-700 dark:text-slate-200"
+                        >
+                          <span className="w-5 h-5 rounded-md bg-purple-100 dark:bg-purple-950 text-purple-700 dark:text-purple-300 flex items-center justify-center text-xs">
+                            <Layers className="w-3 h-3" />
+                          </span>
+                          <div>
+                            <span className="font-bold block">Properties</span>
+                            <span className="text-[9px] text-slate-400">Mathematical Laws &amp; Axioms</span>
+                          </div>
+                        </button>
+
+                        <button
+                          onClick={() => handleContentSectionSelect('formulas', 'mathematics')}
+                          className="w-full text-left px-2.5 py-1.5 rounded-lg text-xs flex items-center gap-2 hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors cursor-pointer text-slate-700 dark:text-slate-200"
+                        >
+                          <span className="w-5 h-5 rounded-md bg-amber-100 dark:bg-amber-950 text-amber-700 dark:text-amber-300 flex items-center justify-center text-xs">
+                            <Calculator className="w-3 h-3" />
+                          </span>
+                          <div>
+                            <span className="font-bold block">Formulas</span>
+                            <span className="text-[9px] text-slate-400">Identities &amp; Cheat Sheets</span>
+                          </div>
+                        </button>
+                      </div>
+                    )}
                   </div>
 
-                  {/* 1. Definitions */}
-                  <button
-                    id="nav-content-option-definitions"
-                    onClick={() => handleContentSectionSelect('definitions')}
-                    className="w-full text-left px-3 py-2 text-xs sm:text-sm flex items-center gap-2.5 hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors cursor-pointer text-slate-700 dark:text-slate-200"
-                  >
-                    <span className="w-6 h-6 rounded-lg bg-emerald-100 dark:bg-emerald-950 text-emerald-700 dark:text-emerald-300 flex items-center justify-center text-xs">
-                      <BookOpen className="w-3.5 h-3.5" />
-                    </span>
-                    <div>
-                      <span className="font-bold block">Definitions</span>
-                      <span className="text-[10px] text-slate-400">A–Z Dictionary &amp; Geometric Diagrams</span>
-                    </div>
-                  </button>
+                  <div className="border-t border-slate-100 dark:border-slate-800 my-1"></div>
 
-                  {/* 2. Theorems */}
-                  <button
-                    id="nav-content-option-theorems"
-                    onClick={() => handleContentSectionSelect('theorems')}
-                    className="w-full text-left px-3 py-2 text-xs sm:text-sm flex items-center gap-2.5 hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors cursor-pointer text-slate-700 dark:text-slate-200"
-                  >
-                    <span className="w-6 h-6 rounded-lg bg-indigo-100 dark:bg-indigo-950 text-indigo-700 dark:text-indigo-300 flex items-center justify-center text-xs">
-                      <Compass className="w-3.5 h-3.5" />
-                    </span>
-                    <div>
-                      <span className="font-bold block">Theorems</span>
-                      <span className="text-[10px] text-slate-400">Formal Statements &amp; Mathematical Proofs</span>
-                    </div>
-                  </button>
+                  {/* PHYSICS SECTION (Click to expand) */}
+                  <div>
+                    <button
+                      type="button"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setIsPhysicsExpandedInContent(!isPhysicsExpandedInContent);
+                      }}
+                      className="w-full text-left px-3 py-2.5 rounded-xl text-xs sm:text-sm flex items-center justify-between hover:bg-cyan-50 dark:hover:bg-slate-800 transition-colors cursor-pointer text-slate-800 dark:text-slate-100"
+                    >
+                      <span className="flex items-center gap-2 font-bold text-cyan-700 dark:text-cyan-300">
+                        <span className="w-7 h-7 rounded-lg bg-cyan-100 dark:bg-cyan-950 text-cyan-700 dark:text-cyan-300 flex items-center justify-center text-xs font-bold shrink-0">
+                          <Atom className="w-4 h-4" />
+                        </span>
+                        <span>Physics</span>
+                      </span>
+                      <div className="flex items-center gap-1 text-xs text-slate-400">
+                        <span className="text-[10px] font-bold">3 Sections</span>
+                        <ChevronDown className={`w-3.5 h-3.5 transition-transform ${isPhysicsExpandedInContent ? 'rotate-180' : ''}`} />
+                      </div>
+                    </button>
 
-                  {/* 3. Properties */}
-                  <button
-                    id="nav-content-option-properties"
-                    onClick={() => handleContentSectionSelect('properties')}
-                    className="w-full text-left px-3 py-2 text-xs sm:text-sm flex items-center gap-2.5 hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors cursor-pointer text-slate-700 dark:text-slate-200"
-                  >
-                    <span className="w-6 h-6 rounded-lg bg-purple-100 dark:bg-purple-950 text-purple-700 dark:text-purple-300 flex items-center justify-center text-xs">
-                      <Layers className="w-3.5 h-3.5" />
-                    </span>
-                    <div>
-                      <span className="font-bold block">Properties</span>
-                      <span className="text-[10px] text-slate-400">Mathematical Laws &amp; Axioms</span>
-                    </div>
-                  </button>
+                    {isPhysicsExpandedInContent && (
+                      <div className="pl-4 pr-1 py-1 space-y-1 border-l-2 border-cyan-200 dark:border-cyan-800 ml-4 animate-in fade-in duration-150">
+                        <button
+                          onClick={() => handleContentSectionSelect('definitions', 'physics')}
+                          className="w-full text-left px-2.5 py-1.5 rounded-lg text-xs flex items-center gap-2 hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors cursor-pointer text-slate-700 dark:text-slate-200"
+                        >
+                          <span className="w-5 h-5 rounded-md bg-cyan-100 dark:bg-cyan-950 text-cyan-700 dark:text-cyan-300 flex items-center justify-center text-xs">
+                            <BookOpen className="w-3 h-3" />
+                          </span>
+                          <div>
+                            <span className="font-bold block">Definitions</span>
+                            <span className="text-[9px] text-slate-400">Physics Constants &amp; Terms</span>
+                          </div>
+                        </button>
+                        <button
+                          onClick={() => handleContentSectionSelect('properties', 'physics')}
+                          className="w-full text-left px-2.5 py-1.5 rounded-lg text-xs flex items-center gap-2 hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors cursor-pointer text-slate-700 dark:text-slate-200"
+                        >
+                          <span className="w-5 h-5 rounded-md bg-blue-100 dark:bg-blue-950 text-blue-700 dark:text-blue-300 flex items-center justify-center text-xs">
+                            <Layers className="w-3 h-3" />
+                          </span>
+                          <div>
+                            <span className="font-bold block">Laws &amp; Principles</span>
+                            <span className="text-[9px] text-slate-400">Conservation Laws</span>
+                          </div>
+                        </button>
+                        <button
+                          onClick={() => handleContentSectionSelect('formulas', 'physics')}
+                          className="w-full text-left px-2.5 py-1.5 rounded-lg text-xs flex items-center gap-2 hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors cursor-pointer text-slate-700 dark:text-slate-200"
+                        >
+                          <span className="w-5 h-5 rounded-md bg-indigo-100 dark:bg-indigo-950 text-indigo-700 dark:text-indigo-300 flex items-center justify-center text-xs">
+                            <Calculator className="w-3 h-3" />
+                          </span>
+                          <div>
+                            <span className="font-bold block">Formulas</span>
+                            <span className="text-[9px] text-slate-400">Mechanics &amp; Electromagnetism</span>
+                          </div>
+                        </button>
+                      </div>
+                    )}
+                  </div>
 
-                  {/* 4. Formulas */}
-                  <button
-                    id="nav-content-option-formulas"
-                    onClick={() => handleContentSectionSelect('formulas')}
-                    className="w-full text-left px-3 py-2 text-xs sm:text-sm flex items-center gap-2.5 hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors cursor-pointer text-slate-700 dark:text-slate-200"
-                  >
-                    <span className="w-6 h-6 rounded-lg bg-amber-100 dark:bg-amber-950 text-amber-700 dark:text-amber-300 flex items-center justify-center text-xs">
-                      <Calculator className="w-3.5 h-3.5" />
-                    </span>
-                    <div>
-                      <span className="font-bold block">Formulas</span>
-                      <span className="text-[10px] text-slate-400">Cheat Sheets &amp; Identities</span>
-                    </div>
-                  </button>
                 </div>
               )}
             </div>
 
+            {/* Leaderboard Button */}
             {onOpenLeaderboard && (
               <button
                 id="nav-link-leaderboard"
                 onClick={onOpenLeaderboard}
                 className="px-3 py-2 rounded-xl text-xs font-bold text-amber-700 dark:text-amber-300 hover:text-amber-800 dark:hover:text-amber-200 bg-amber-50/80 dark:bg-amber-950/40 hover:bg-amber-100 dark:hover:bg-amber-900/50 transition-all flex items-center gap-1.5 border border-amber-200/80 dark:border-amber-700/50 shadow-2xs cursor-pointer"
-                title="View Class Rankings & High Scores"
+                title="View Class Rankings &amp; High Scores"
               >
                 <Trophy className="w-3.5 h-3.5 text-amber-500 fill-amber-500/20" />
                 <span>Leaderboard</span>
@@ -322,42 +606,67 @@ export const Navbar: React.FC<NavbarProps> = ({
             )}
           </div>
 
-          {/* Actions: Day/Night Mode Single Button & About Me */}
+          {/* Right Actions: Auth/Profile + Day/Night Mode + About Me */}
           <div className="flex items-center gap-2 sm:gap-3">
+            
+            {/* User Profile / Sign In Button */}
+            {currentUser || userProfile ? (
+              <button
+                onClick={onOpenProfile}
+                className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-indigo-50 dark:bg-indigo-950/60 border border-indigo-200 dark:border-indigo-800 text-indigo-700 dark:text-indigo-300 hover:bg-indigo-100 dark:hover:bg-indigo-900/50 text-xs font-bold transition-all cursor-pointer"
+                title="View Student Profile &amp; Stats"
+              >
+                <User className="w-3.5 h-3.5" />
+                <span className="max-w-[100px] truncate hidden sm:inline">
+                  {userProfile?.displayName || currentUser?.email?.split('@')[0] || 'Profile'}
+                </span>
+                <span className="sm:hidden">Profile</span>
+              </button>
+            ) : (
+              <button
+                onClick={onOpenAuth}
+                className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 text-white text-xs font-bold shadow-xs transition-all cursor-pointer"
+                title="Sign In or Create Account"
+              >
+                <LogIn className="w-3.5 h-3.5" />
+                <span>Sign In</span>
+              </button>
+            )}
+
             {/* Single Button Day / Night Mode Toggle */}
             <button
               id="theme-toggle-btn"
               onClick={toggleTheme}
-              className="p-2 sm:px-3.5 sm:py-2 rounded-xl text-xs font-bold border transition-all flex items-center gap-1.5 cursor-pointer bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 border-slate-200 dark:border-slate-700 shadow-2xs hover:scale-105 active:scale-95"
-              title={isDarkMode ? 'Turn Off Night Mode (Switch to Day Mode)' : 'Turn On Night Mode (Switch to Dark Mode)'}
+              className="p-2 sm:px-3 sm:py-1.5 rounded-xl text-xs font-bold border transition-all flex items-center gap-1.5 cursor-pointer bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 border-slate-200 dark:border-slate-700 shadow-2xs hover:scale-105 active:scale-95"
+              title={isDarkMode ? 'Turn Off Night Mode' : 'Turn On Night Mode'}
               aria-label={isDarkMode ? 'Switch to Day Mode' : 'Switch to Night Mode'}
             >
               {isDarkMode ? (
                 <>
                   <Sun className="w-4 h-4 text-amber-400 fill-amber-400/30" />
-                  <span className="hidden sm:inline">Day Mode</span>
+                  <span className="hidden sm:inline">Day</span>
                 </>
               ) : (
                 <>
                   <Moon className="w-4 h-4 text-indigo-600 fill-indigo-600/20" />
-                  <span className="hidden sm:inline">Night Mode</span>
+                  <span className="hidden sm:inline">Night</span>
                 </>
               )}
             </button>
 
-            {/* About Me Button (Positioned After Night Mode) */}
+            {/* About Me Button */}
             <button
               id="nav-link-about"
               onClick={() => onNavigate('about')}
-              className={`hidden sm:flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs sm:text-sm font-semibold transition-all cursor-pointer border ${
+              className={`hidden sm:flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold transition-all cursor-pointer border ${
                 activeTab === 'about'
                   ? 'text-indigo-600 dark:text-indigo-400 bg-indigo-50 dark:bg-indigo-950/60 border-indigo-200 dark:border-indigo-800 shadow-xs'
                   : 'text-slate-700 dark:text-slate-200 hover:text-slate-900 dark:hover:text-white bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 border-slate-200 dark:border-slate-700 shadow-2xs'
               }`}
               title="About Me"
             >
-              <Info className="w-4 h-4 text-indigo-500" />
-              <span>About Me</span>
+              <Info className="w-3.5 h-3.5 text-indigo-500" />
+              <span>About</span>
             </button>
 
             {/* Mobile menu toggle */}
@@ -380,23 +689,30 @@ export const Navbar: React.FC<NavbarProps> = ({
         <div id="mobile-menu-panel" className="md:hidden border-t border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 px-4 pt-3 pb-5 space-y-3">
           <div className="grid grid-cols-2 gap-2">
             <button
-              onClick={() => {
-                onNavigate('home');
-                setMobileMenuOpen(false);
-              }}
-              className={`p-2.5 rounded-xl text-xs sm:text-sm text-left font-bold ${
-                activeTab === 'home'
+              onClick={() => handlePhilosophySelect('mathematicians')}
+              className={`p-2.5 rounded-xl text-xs font-bold ${
+                activeTab === 'philosophy' && activePhilosopherType === 'mathematicians'
                   ? 'bg-indigo-50 dark:bg-indigo-950 text-indigo-600 dark:text-indigo-400'
                   : 'text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800'
               }`}
             >
-              Home
+              Mathematicians
+            </button>
+            <button
+              onClick={() => handlePhilosophySelect('physicists')}
+              className={`p-2.5 rounded-xl text-xs font-bold ${
+                activeTab === 'philosophy' && activePhilosopherType === 'physicists'
+                  ? 'bg-cyan-50 dark:bg-cyan-950 text-cyan-600 dark:text-cyan-400'
+                  : 'text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800'
+              }`}
+            >
+              Physicists
             </button>
             <button
               onClick={() => {
                 handleContentSectionSelect('definitions');
               }}
-              className={`p-2.5 rounded-xl text-xs sm:text-sm text-left font-bold ${
+              className={`p-2.5 rounded-xl text-xs font-bold ${
                 activeTab === 'dictionary'
                   ? 'bg-indigo-50 dark:bg-indigo-950 text-indigo-600 dark:text-indigo-400'
                   : 'text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800'
@@ -409,7 +725,7 @@ export const Navbar: React.FC<NavbarProps> = ({
                 onNavigate('about');
                 setMobileMenuOpen(false);
               }}
-              className={`p-2.5 rounded-xl text-xs sm:text-sm text-left font-bold ${
+              className={`p-2.5 rounded-xl text-xs font-bold ${
                 activeTab === 'about'
                   ? 'bg-indigo-50 dark:bg-indigo-950 text-indigo-600 dark:text-indigo-400'
                   : 'text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800'
@@ -423,7 +739,7 @@ export const Navbar: React.FC<NavbarProps> = ({
                   onOpenLeaderboard();
                   setMobileMenuOpen(false);
                 }}
-                className="p-2.5 rounded-xl text-xs sm:text-sm text-left font-bold text-amber-700 dark:text-amber-300 bg-amber-50/60 dark:bg-amber-950/40 hover:bg-amber-100 dark:hover:bg-amber-900/50 flex items-center gap-1.5"
+                className="p-2.5 rounded-xl text-xs font-bold text-amber-700 dark:text-amber-300 bg-amber-50/60 dark:bg-amber-950/40 hover:bg-amber-100 dark:hover:bg-amber-900/50 flex items-center gap-1.5 col-span-2 justify-center"
               >
                 <Trophy className="w-3.5 h-3.5 text-amber-500" />
                 <span>Leaderboard</span>
@@ -431,68 +747,9 @@ export const Navbar: React.FC<NavbarProps> = ({
             )}
           </div>
 
-          {/* Quick Content Section Links in Mobile */}
-          <div className="pt-2 border-t border-slate-200 dark:border-slate-800">
-            <p className="text-[11px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider mb-2">
-              Content Sections:
-            </p>
-            <div className="grid grid-cols-2 gap-1.5">
-              <button
-                onClick={() => handleContentSectionSelect('definitions')}
-                className="p-2 rounded-xl text-xs font-semibold text-left bg-slate-50 dark:bg-slate-800/80 text-slate-700 dark:text-slate-300 hover:bg-indigo-50 dark:hover:bg-indigo-950 flex items-center gap-1.5"
-              >
-                <BookOpen className="w-3.5 h-3.5 text-emerald-500" />
-                <span>Definitions</span>
-              </button>
-              <button
-                onClick={() => handleContentSectionSelect('theorems')}
-                className="p-2 rounded-xl text-xs font-semibold text-left bg-slate-50 dark:bg-slate-800/80 text-slate-700 dark:text-slate-300 hover:bg-indigo-50 dark:hover:bg-indigo-950 flex items-center gap-1.5"
-              >
-                <Compass className="w-3.5 h-3.5 text-indigo-500" />
-                <span>Theorems</span>
-              </button>
-              <button
-                onClick={() => handleContentSectionSelect('properties')}
-                className="p-2 rounded-xl text-xs font-semibold text-left bg-slate-50 dark:bg-slate-800/80 text-slate-700 dark:text-slate-300 hover:bg-indigo-50 dark:hover:bg-indigo-950 flex items-center gap-1.5"
-              >
-                <Layers className="w-3.5 h-3.5 text-purple-500" />
-                <span>Properties</span>
-              </button>
-              <button
-                onClick={() => handleContentSectionSelect('formulas')}
-                className="p-2 rounded-xl text-xs font-semibold text-left bg-slate-50 dark:bg-slate-800/80 text-slate-700 dark:text-slate-300 hover:bg-indigo-50 dark:hover:bg-indigo-950 flex items-center gap-1.5"
-              >
-                <Calculator className="w-3.5 h-3.5 text-amber-500" />
-                <span>Formulas</span>
-              </button>
-            </div>
-          </div>
-
-          <div className="pt-2 border-t border-slate-200 dark:border-slate-800 flex items-center justify-between">
-            <span className="text-xs font-bold text-slate-500 dark:text-slate-400">
-              Display Mode:
-            </span>
-            <button
-              onClick={toggleTheme}
-              className="px-3 py-1.5 rounded-xl text-xs font-bold border transition-all flex items-center gap-1.5 bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-200 border-slate-200 dark:border-slate-700"
-            >
-              {isDarkMode ? (
-                <>
-                  <Sun className="w-3.5 h-3.5 text-amber-400 fill-amber-400/30" />
-                  <span>Turn Off Night Mode (Day)</span>
-                </>
-              ) : (
-                <>
-                  <Moon className="w-3.5 h-3.5 text-indigo-600 fill-indigo-600/20" />
-                  <span>Turn On Night Mode (Dark)</span>
-                </>
-              )}
-            </button>
-          </div>
-
           <div className="pt-2 border-t border-slate-200 dark:border-slate-800">
             <p className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-2">
-              Select Class:
+              Select Mathematics Class:
             </p>
             <div className="grid grid-cols-4 gap-2">
               {([9, 10, 11, 12] as ClassLevel[]).map((lvl) => (
@@ -516,5 +773,3 @@ export const Navbar: React.FC<NavbarProps> = ({
     </nav>
   );
 };
-
-

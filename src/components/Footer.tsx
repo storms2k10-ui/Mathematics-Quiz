@@ -1,9 +1,10 @@
 import React from 'react';
 import { Sigma, GraduationCap, Sparkles, MessageCircle, Mail } from 'lucide-react';
 import { ClassLevel } from '../types';
+import { NavTab } from './Navbar';
 
 interface FooterProps {
-  onNavigate: (tab: 'home' | 'classes' | 'dictionary' | 'about', classLevel?: ClassLevel) => void;
+  onNavigate: (tab: NavTab, classLevel?: ClassLevel) => void;
 }
 
 export const Footer: React.FC<FooterProps> = ({ onNavigate }) => {
@@ -97,10 +98,10 @@ export const Footer: React.FC<FooterProps> = ({ onNavigate }) => {
             <ul className="space-y-2">
               <li>
                 <button
-                  onClick={() => onNavigate('home')}
+                  onClick={() => onNavigate('philosophy')}
                   className="hover:text-indigo-400 transition-colors cursor-pointer"
                 >
-                  Home
+                  Philosophy (Physicists &amp; Mathematicians)
                 </button>
               </li>
               <li>

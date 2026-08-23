@@ -447,32 +447,39 @@ export const ScoreView: React.FC<ScoreViewProps> = ({
               </div>
             </div>
 
-            {/* Right: Big Percentage Visual */}
-            <div className="shrink-0 flex flex-col items-center justify-center space-y-2">
-              <div className="w-32 h-32 rounded-full border-8 border-indigo-100 dark:border-slate-800 flex flex-col items-center justify-center bg-indigo-50/50 dark:bg-indigo-950/20 shadow-inner">
-                <span className="text-3xl sm:text-4xl font-black text-indigo-600 dark:text-indigo-400">
-                  {percentage}%
-                </span>
-                <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400">
-                  Accuracy
-                </span>
+            {/* Right: Twin Circles (Light Green for Accuracy of Correct Questions & Light Red for Percentage of Wrong Questions) */}
+            <div className="shrink-0 flex flex-col sm:flex-row items-center justify-center gap-4">
+              {/* Light Green Circle: Accuracy of Correct Questions */}
+              <div className="flex flex-col items-center justify-center p-3 rounded-2xl bg-emerald-50/60 dark:bg-emerald-950/30 border border-emerald-200 dark:border-emerald-800/60">
+                <div className="w-28 h-28 rounded-full border-4 border-emerald-400 dark:border-emerald-500 flex flex-col items-center justify-center bg-white dark:bg-emerald-900/30 shadow-xs">
+                  <span className="text-2xl sm:text-3xl font-black text-emerald-600 dark:text-emerald-300">
+                    {percentage}%
+                  </span>
+                  <span className="text-[9px] font-black uppercase tracking-wider text-emerald-700 dark:text-emerald-400">
+                    Correct Accuracy
+                  </span>
+                </div>
+                <div className="mt-2 text-center">
+                  <span className="text-xs font-extrabold text-emerald-800 dark:text-emerald-200">
+                    {correctCount} / {totalQuestions} Correct
+                  </span>
+                </div>
               </div>
 
-              {/* Mini Stats Bar */}
-              <div className="grid grid-cols-3 gap-2 pt-2 text-center">
-                <div className="p-2.5 rounded-xl bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-800/60">
-                  <span className="block text-[10px] uppercase font-bold text-emerald-700 dark:text-emerald-300">Correct</span>
-                  <span className="text-sm sm:text-base font-extrabold text-emerald-800 dark:text-emerald-200">{correctCount}</span>
+              {/* Light Red Circle: Percentage of Wrong Questions */}
+              <div className="flex flex-col items-center justify-center p-3 rounded-2xl bg-rose-50/60 dark:bg-rose-950/30 border border-rose-200 dark:border-rose-800/60">
+                <div className="w-28 h-28 rounded-full border-4 border-rose-400 dark:border-rose-500 flex flex-col items-center justify-center bg-white dark:bg-rose-900/30 shadow-xs">
+                  <span className="text-2xl sm:text-3xl font-black text-rose-600 dark:text-rose-300">
+                    {totalQuestions > 0 ? Math.round((incorrectCount / totalQuestions) * 100) : 0}%
+                  </span>
+                  <span className="text-[9px] font-black uppercase tracking-wider text-rose-700 dark:text-rose-400">
+                    Wrong Questions
+                  </span>
                 </div>
-
-                <div className="p-2.5 rounded-xl bg-rose-50 dark:bg-rose-950/40 border border-rose-200 dark:border-rose-800/60">
-                  <span className="block text-[10px] uppercase font-bold text-rose-700 dark:text-rose-300">Incorrect</span>
-                  <span className="text-sm sm:text-base font-extrabold text-rose-800 dark:text-rose-200">{incorrectCount}</span>
-                </div>
-
-                <div className="p-2.5 rounded-xl bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700">
-                  <span className="block text-[10px] uppercase font-bold text-slate-500 dark:text-slate-400">Time</span>
-                  <span className="text-sm sm:text-base font-extrabold text-slate-800 dark:text-slate-200">{formatTime(totalTimeSeconds)}</span>
+                <div className="mt-2 text-center">
+                  <span className="text-xs font-extrabold text-rose-800 dark:text-rose-200">
+                    {incorrectCount} / {totalQuestions} Mistakes
+                  </span>
                 </div>
               </div>
             </div>
